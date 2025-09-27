@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { User, Post, UserRole, Quest, QuestStatus } from '../types';
 import { TrashIcon, PencilIcon } from '../constants';
+
+type AdminTab = 'users' | 'posts' | 'quests' | 'settings';
 
 const allRoles: UserRole[] = ['player', 'player_plus', 'team_owner', 'team_owner_plus', 'co_owner', 'admin'];
 const allQuestStatuses: QuestStatus[] = ['incomplete', 'started', 'completed'];
@@ -241,6 +243,7 @@ const QuestManagement: React.FC<{ quests: Quest[], addQuest: Function, updateQue
 export const AdminDashboardPage: React.FC = () => {
     const { users, posts, quests, currentUser, deleteUser, deletePost, updateUserRole, addQuest, updateQuestStatus, deleteQuest, grantQuestReward, reactionPointThreshold, reactionPointReward, updateReactionPointConfig, manualUpdateUserPoints } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
+    const [activeTab, setActiveTab] = useState<AdminTab>('users');
     
     const [isGrantModalOpen, setIsGrantModalOpen] = useState(false);
     const [questToGrant, setQuestToGrant] = useState<Quest | null>(null);
@@ -253,12 +256,12 @@ export const AdminDashboardPage: React.FC = () => {
     const [pointsMessage, setPointsMessage] = useState({ type: '', text: '' });
     
     if (!currentUser) return null;
-
+    
     const lowercasedFilter = searchTerm.toLowerCase();
 
-    const filteredUsers = searchTerm ? users.filter(user => user.gamertag.toLowerCase().includes(lowercasedFilter)) : users;
-    const filteredPosts = searchTerm ? posts.filter(post => post.content.toLowerCase().includes(lowercasedFilter) || post.authorGamertag.toLowerCase().includes(lowercasedFilter)) : posts;
-    const filteredQuests = searchTerm ? quests.filter(quest => quest.title.toLowerCase().includes(lowercasedFilter) || quest.description.toLowerCase().includes(lowercasedFilter)) : quests;
+    const filteredUsers = useMemo(() => searchTerm ? users.filter(user => user.gamertag.toLowerCase().includes(lowercasedFilter)) : users, [users, searchTerm]);
+    const filteredPosts = useMemo(() => searchTerm ? posts.filter(post => post.content.toLowerCase().includes(lowercasedFilter) || post.authorGamertag.toLowerCase().includes(lowercasedFilter)) : posts, [posts, searchTerm]);
+    const filteredQuests = useMemo(() => searchTerm ? quests.filter(quest => quest.title.toLowerCase().includes(lowercasedFilter) || quest.description.toLowerCase().includes(lowercasedFilter)) : quests, [quests, searchTerm]);
     
     const handleOpenGrantModal = (quest: Quest) => {
         setQuestToGrant(quest);
@@ -307,27 +310,55 @@ export const AdminDashboardPage: React.FC = () => {
             setPointsMessage({ type: 'error', text: err.message });
         }
     };
+    
+    const searchPlaceholders: Record<AdminTab, string> = {
+        users: 'Search users by gamertag...',
+        posts: 'Search posts by content or author...',
+        quests: 'Search quests by title or description...',
+        settings: 'Search settings...'
+    };
+
+    const TabButton: React.FC<{ tab: AdminTab; label: string }> = ({ tab, label }) => (
+        <button
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2 text-sm font-semibold rounded-t-lg transition-colors ${
+                activeTab === tab 
+                ? 'bg-green-900/60 border-b-2 border-yellow-500 text-white' 
+                : 'text-gray-400 hover:text-white'
+            }`}
+        >
+            {label}
+        </button>
+    );
 
     return (
         <>
-            <div className="max-w-4xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
                 <h1 className="text-4xl font-bold text-center mb-6 text-white">Admin Dashboard</h1>
 
-                <div className="mb-8">
+                <div className="flex space-x-1 border-b-2 border-green-800">
+                    <TabButton tab="users" label="Users" />
+                    <TabButton tab="posts" label="Posts" />
+                    <TabButton tab="quests" label="Quests" />
+                    <TabButton tab="settings" label="Settings" />
+                </div>
+                
+                <div className="mt-6 mb-8">
                     <input
                         type="text"
-                        placeholder="Search users, posts, or quests..."
+                        placeholder={searchPlaceholders[activeTab] || 'Search...'}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full bg-green-900/60 text-white border border-green-800 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition placeholder-gray-400/50"
+                        disabled={activeTab === 'settings'}
                     />
                 </div>
 
                 <div className="space-y-8">
-                    <SiteSettings threshold={reactionPointThreshold} reward={reactionPointReward} updateConfig={updateReactionPointConfig} />
-                    <QuestManagement quests={filteredQuests} addQuest={addQuest} updateQuestStatus={updateQuestStatus} deleteQuest={deleteQuest} handleOpenGrantModal={handleOpenGrantModal} />
-                    <UserManagement users={filteredUsers} currentUser={currentUser} deleteUser={deleteUser} updateUserRole={updateUserRole} handleOpenPointsModal={handleOpenPointsModal} />
-                    <PostManagement posts={filteredPosts} deletePost={deletePost} />
+                    {activeTab === 'users' && <UserManagement users={filteredUsers} currentUser={currentUser} deleteUser={deleteUser} updateUserRole={updateUserRole} handleOpenPointsModal={handleOpenPointsModal} />}
+                    {activeTab === 'posts' && <PostManagement posts={filteredPosts} deletePost={deletePost} />}
+                    {activeTab === 'quests' && <QuestManagement quests={filteredQuests} addQuest={addQuest} updateQuestStatus={updateQuestStatus} deleteQuest={deleteQuest} handleOpenGrantModal={handleOpenGrantModal} />}
+                    {activeTab === 'settings' && <SiteSettings threshold={reactionPointThreshold} reward={reactionPointReward} updateConfig={updateReactionPointConfig} />}
                 </div>
             </div>
 

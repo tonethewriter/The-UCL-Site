@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { Quest, QuestStatus } from '../types';
 import { QuestionMarkIcon } from '../constants';
@@ -17,7 +17,36 @@ const filterOptions: { label: string, value: 'all' | QuestStatus }[] = [
 ];
 
 const QuestCard: React.FC<{ quest: Quest }> = ({ quest }) => {
+    const { currentUser, claimQuestReward, updateQuestProgress } = useAuth();
     const styles = statusStyles[quest.status];
+    const [isRevealed, setIsRevealed] = useState(false);
+    const [claimError, setClaimError] = useState('');
+
+    const isClaimed = currentUser && quest.claimedBy.includes(currentUser.id);
+
+    useEffect(() => {
+        if (quest.status === 'completed') {
+            const timer = setTimeout(() => {
+                setIsRevealed(true);
+            }, 100);
+            return () => clearTimeout(timer);
+        } else {
+            setIsRevealed(false);
+        }
+    }, [quest.status]);
+
+    const handleClaim = async () => {
+        setClaimError('');
+        try {
+            await claimQuestReward(quest.id);
+        } catch (err: any) {
+            setClaimError(err.message);
+            setTimeout(() => setClaimError(''), 3000);
+        }
+    };
+    
+    const hasProgress = typeof quest.progress === 'number' && typeof quest.target === 'number';
+    const progressPercentage = hasProgress && quest.target! > 0 ? (quest.progress! / quest.target!) * 100 : 0;
 
     return (
         <div className={`bg-green-900/60 p-6 rounded-lg shadow-lg border-t-4 ${styles.border} flex flex-col justify-between`}>
@@ -30,11 +59,45 @@ const QuestCard: React.FC<{ quest: Quest }> = ({ quest }) => {
                 </div>
                 <p className="text-gray-300 min-h-[40px]">{quest.description}</p>
             </div>
-            <div className="mt-6 pt-4 border-t border-green-800/50">
+            
+            {hasProgress && (
+                <div className="mt-4">
+                    <div className="flex justify-between items-baseline mb-1">
+                        <span className="text-sm font-semibold text-gray-300">Progress</span>
+                        <span className="text-sm font-bold text-yellow-300">{quest.progress} / {quest.target}</span>
+                    </div>
+                    <div className="w-full bg-green-950 rounded-full h-2.5 border border-green-800">
+                        <div className="bg-yellow-500 h-2 rounded-full transition-all duration-500" style={{ width: `${progressPercentage}%` }}></div>
+                    </div>
+                    {quest.status !== 'completed' && currentUser && (
+                      <div className="text-right mt-2">
+                        <button onClick={() => updateQuestProgress(quest.id, 1)} className="text-xs bg-green-700 hover:bg-green-600 text-white font-semibold py-1 px-3 rounded-md transition-colors">
+                            +1 Progress (Sim)
+                        </button>
+                      </div>
+                  )}
+                </div>
+            )}
+
+            <div className="mt-6 pt-4 border-t border-green-800/50 overflow-hidden">
                 <h3 className="text-sm font-semibold text-yellow-300 mb-2 uppercase tracking-wider">Reward</h3>
                 {quest.status === 'completed' ? (
-                    <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-center">
-                        <p className="text-lg font-bold text-yellow-300">{quest.prize}</p>
+                    <div className={`transition-all duration-500 ease-in-out ${isRevealed ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5'}`}>
+                        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-center">
+                            <p className="text-lg font-bold text-yellow-300">{quest.prize}</p>
+                        </div>
+                        {currentUser && (
+                             <div className="mt-3 text-center">
+                                {isClaimed ? (
+                                    <p className="font-bold text-green-400">Reward Claimed!</p>
+                                ) : (
+                                    <button onClick={handleClaim} className="bg-yellow-600 hover:bg-yellow-700 text-green-900 font-bold py-2 px-6 rounded-lg transition-transform hover:scale-105">
+                                        Claim Reward
+                                    </button>
+                                )}
+                                {claimError && <p className="text-red-400 text-xs mt-2">{claimError}</p>}
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <div className="flex items-center gap-2 text-gray-400">

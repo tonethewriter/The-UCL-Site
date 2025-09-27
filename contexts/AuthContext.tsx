@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import { User, Post, Reaction, UserRole, Quest, QuestStatus } from '../types';
+import { User, Post, Reaction, UserRole, Quest, QuestStatus, Comment } from '../types';
 
 export interface AuthContextType {
   currentUser: User | null;
@@ -27,6 +27,9 @@ export interface AuthContextType {
   grantQuestReward: (userId: string, prize: string) => Promise<void>;
   updateReactionPointConfig: (threshold: number, reward: number) => Promise<void>;
   manualUpdateUserPoints: (userId: string, points: number) => Promise<void>;
+  addComment: (postId: string, content: string) => Promise<void>;
+  claimQuestReward: (questId: string) => Promise<void>;
+  updateQuestProgress: (questId: string, amount: number) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -60,6 +63,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         content: 'Welcome to the United Clan League! This is the first official post. Feel free to react.',
         timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
         reactions: [{ emoji: '🔥', users: ['2'] }],
+        comments: [],
         pointsAwarded: false,
       },
       {
@@ -69,6 +73,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         content: 'Excited to be here! Looking forward to connecting with other members.',
         timestamp: new Date(Date.now() - 1000 * 60 * 2).toISOString(),
         reactions: [{ emoji: '👍', users: ['1'] }, { emoji: '❤️', users: ['1'] }],
+        comments: [],
         pointsAwarded: false,
       },
       {
@@ -78,6 +83,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         content: 'My team, The Legends, is looking for new talent! Message me to try out.',
         timestamp: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
         reactions: [{ emoji: '🔥', users: ['1', '2'] }],
+        comments: [],
         pointsAwarded: false,
       },
   ]));
@@ -87,21 +93,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       title: 'First Steps',
       description: 'Welcome to the league! Complete your first match to earn a reward.',
       status: 'started',
-      prize: '50 UCL Points'
+      prize: '50 UCL Points',
+      claimedBy: [],
+      progress: 0,
+      target: 1,
     },
     {
       id: 'q2',
       title: 'Team Player',
       description: 'Win 3 matches with your designated team.',
       status: 'incomplete',
-      prize: 'Exclusive Team Banner'
+      prize: 'Exclusive Team Banner',
+      claimedBy: [],
+      progress: 1,
+      target: 3,
     },
      {
       id: 'q3',
       title: 'Legendary Victory',
       description: 'Achieve a flawless victory in a tournament match.',
       status: 'completed',
-      prize: 'Legendary Loot Box'
+      prize: 'Legendary Loot Box',
+      claimedBy: [],
+      progress: 1,
+      target: 1,
     }
   ]));
   const [reactionPointThreshold, setReactionPointThreshold] = useState<number>(() => getInitialState<number>('reactionPointThreshold', 20));
@@ -222,6 +237,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       content,
       timestamp: new Date().toISOString(),
       reactions: [],
+      comments: [],
       pointsAwarded: false,
     };
     setPosts(prev => [newPost, ...prev]);
@@ -403,6 +419,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         description,
         prize,
         status: 'incomplete',
+        claimedBy: [],
     };
     setQuests(prev => [newQuest, ...prev]);
   };
@@ -475,8 +492,84 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }));
   };
 
+  const addComment = async (postId: string, content: string): Promise<void> => {
+    if (!currentUser) throw new Error("You must be logged in to comment.");
+
+    const newComment: Comment = {
+        id: `c${Date.now()}`,
+        authorId: currentUser.id,
+        authorGamertag: currentUser.gamertag,
+        content,
+        timestamp: new Date().toISOString(),
+    };
+
+    setPosts(currentPosts =>
+        currentPosts.map(post =>
+            post.id === postId ? { ...post, comments: [...post.comments, newComment] } : post
+        )
+    );
+  };
+
+  const claimQuestReward = async (questId: string): Promise<void> => {
+    if (!currentUser) {
+        throw new Error("You must be logged in to claim a reward.");
+    }
+    const quest = quests.find(q => q.id === questId);
+    if (!quest) throw new Error("Quest not found.");
+    if (quest.status !== 'completed') throw new Error("Quest is not yet completed.");
+    if (quest.claimedBy?.includes(currentUser.id)) throw new Error("You have already claimed this reward.");
+
+    // Grant the prize (re-using logic from grantQuestReward but for currentUser)
+    const pointsRegex = /(\d+)\s+UCL\s+Points/i;
+    const match = quest.prize.match(pointsRegex);
+
+    let userUpdated = false;
+    setUsers(currentUsers => currentUsers.map(user => {
+        if (user.id === currentUser.id) {
+            userUpdated = true;
+            const updatedUser = { ...user };
+            if (match && match[1]) {
+                const pointsToAdd = parseInt(match[1], 10);
+                alert(`Awarding ${pointsToAdd} UCL Points to you.`);
+                updatedUser.uclPoints += pointsToAdd;
+            } else {
+                alert(`You have received the prize: "${quest.prize}"! (Simulated)`);
+            }
+            setCurrentUser(updatedUser);
+            return updatedUser;
+        }
+        return user;
+    }));
+
+    if (!userUpdated) throw new Error("Current user not found to grant reward to.");
+
+    // Mark as claimed
+    setQuests(currentQuests => currentQuests.map(q =>
+        q.id === questId ? { ...q, claimedBy: [...(q.claimedBy || []), currentUser.id] } : q
+    ));
+  };
+  
+  const updateQuestProgress = async (questId: string, amount: number): Promise<void> => {
+    setQuests(currentQuests => currentQuests.map(q => {
+        if (q.id === questId && typeof q.progress === 'number' && typeof q.target === 'number' && q.status !== 'completed') {
+            const newProgress = Math.min(q.progress + amount, q.target);
+            // FIX: Explicitly type `newStatus` as `QuestStatus` to allow assignment of 'completed'.
+            // The type was previously inferred as 'incomplete' | 'started' due to the `q.status !== 'completed'` check.
+            let newStatus: QuestStatus = q.status;
+            if (newProgress > 0 && newStatus === 'incomplete') {
+                newStatus = 'started';
+            }
+            if (newProgress >= q.target) {
+                newStatus = 'completed';
+            }
+            return { ...q, progress: newProgress, status: newStatus };
+        }
+        return q;
+    }));
+  };
+
   return (
-    <AuthContext.Provider value={{ currentUser, users, posts, quests, reactionPointThreshold, reactionPointReward, login, logout, signUp, addPost, deletePost, deleteUser, toggleReaction, updateUser, assignCoOwner, removeCoOwner, updateUserRole, upgradeToPlayerPlus, upgradeToTeamOwnerPlus, addQuest, updateQuestStatus, deleteQuest, grantQuestReward, updateReactionPointConfig, manualUpdateUserPoints }}>
+    <AuthContext.Provider value={{ currentUser, users, posts, quests, reactionPointThreshold, reactionPointReward, login, logout, signUp, addPost, deletePost, deleteUser, toggleReaction, updateUser, assignCoOwner, removeCoOwner, updateUserRole, upgradeToPlayerPlus, upgradeToTeamOwnerPlus, addQuest, updateQuestStatus, deleteQuest, grantQuestReward, updateReactionPointConfig, manualUpdateUserPoints, addComment, claimQuestReward, updateQuestProgress }}>
       {children}
     </AuthContext.Provider>
   );

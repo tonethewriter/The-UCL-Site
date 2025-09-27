@@ -16,6 +16,14 @@ export interface Reaction {
   users: string[]; // Array of user IDs who reacted
 }
 
+export interface Comment {
+  id: string;
+  authorId: string;
+  authorGamertag: string;
+  content: string;
+  timestamp: string;
+}
+
 export interface Post {
   id: string;
   authorId: string;
@@ -23,6 +31,7 @@ export interface Post {
   content: string;
   timestamp: string;
   reactions: Reaction[];
+  comments: Comment[];
   pointsAwarded?: boolean;
 }
 
@@ -34,4 +43,7 @@ export interface Quest {
   description: string;
   status: QuestStatus;
   prize: string;
+  claimedBy: string[]; // Array of user IDs who have claimed the prize
+  progress?: number;
+  target?: number;
 }
