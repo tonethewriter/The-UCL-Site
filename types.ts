@@ -157,3 +157,76 @@ export interface CustomEmoji {
   imageUrl: string;
   uploaderId: string;
 }
+
+export type FeedbackStatus = 'new' | 'viewed' | 'archived';
+
+export interface Feedback {
+  id: string;
+  userId: string;
+  userGamertag: string;
+  type: string;
+  message: string;
+  timestamp: string;
+  status: FeedbackStatus;
+}
+
+export interface AuthContextType {
+  currentUser: User | null;
+  users: User[];
+  posts: Post[];
+  quests: Quest[];
+  messages: Message[];
+  notifications: Notification[];
+  teams: Team[];
+  invites: Invite[];
+  applications: Application[];
+  activityLog: ActivityLog[];
+  customEmojis: CustomEmoji[];
+  feedback: Feedback[];
+  reactionPointReward: number;
+  isWallPostingDisabled: boolean;
+  login: (identifier: string, pin: string) => Promise<void>;
+  logout: () => void;
+  signUp: (gamertag: string, email: string, pin:string, role: UserRole, teamName?: string) => Promise<void>;
+  addPost: (content: string, imageUrl?: string, privateTeamId?: string) => void;
+  toggleReaction: (postId: string, emoji: string) => void;
+  addComment: (postId: string, content: string) => void;
+  claimQuestReward: (questId: string) => Promise<void>;
+  updateQuestProgress: (questId: string, amount: number) => void;
+  sendMessage: (channelId: string, content: string) => void;
+  leaveTeam: () => Promise<void>;
+  toggleFreeAgentStatus: () => Promise<void>;
+  markNotificationAsRead: (notificationId: string) => void;
+  markAllNotificationsAsRead: () => void;
+  updateNotificationSettings: (settings: NotificationSettings) => Promise<void>;
+  addQuest: (questData: { title: string; description: string; prize: string; target?: number }) => void;
+  updateQuest: (questData: Quest) => void;
+  deleteQuest: (questId: string) => void;
+  deleteUser: (userId: string) => void;
+  updateUserRole: (userId: string, newRole: UserRole) => void;
+  deletePost: (postId: string) => void;
+  deleteAllPublicPosts: () => void;
+  submitFeedback: (type: string, message: string) => Promise<void>;
+  updateFeedbackStatus: (feedbackId: string, status: FeedbackStatus) => Promise<void>;
+  adjustUserPoints: (userId: string, amount: number) => void;
+  updateUserProfile: (profileData: { gamertag: string; email: string; twitter?: string; twitch?: string; youtube?: string; }) => Promise<void>;
+  updateProfilePicture: (pictureUrl: string) => Promise<void>;
+  sendInvite: (teamId: string, userId: string) => Promise<void>;
+  respondToInvite: (inviteId: string, response: 'accepted' | 'declined') => Promise<void>;
+  applyToTeam: (teamId: string) => Promise<void>;
+  respondToApplication: (applicationId: string, response: 'accepted' | 'declined') => Promise<void>;
+  editTeamDetails: (teamId: string, details: { name: string; description: string; logoUrl: string; }) => Promise<void>;
+  transferTeamOwnership: (teamId: string, newOwnerId: string) => Promise<void>;
+  disbandTeam: (teamId: string) => Promise<void>;
+  pinPost: (postId: string | null) => Promise<void>;
+  updateProfileBanner: (bannerUrl: string) => Promise<void>;
+  updateTeamBanner: (teamId: string, bannerUrl: string) => Promise<void>;
+  addCustomEmoji: (name: string, imageUrl: string) => Promise<void>;
+  deleteCustomEmoji: (emojiId: string) => Promise<void>;
+  updateProfileVisibility: (settings: ProfileVisibility) => Promise<void>;
+  timeoutUser: (userId: string, durationHours: number) => Promise<void>;
+  deleteComment: (postId: string, commentId: string) => Promise<void>;
+  toggleWallPosting: () => void;
+  toggleModeratorStatus: (userId: string) => void;
+  sendMassCommunication: (subject: string, message: string) => Promise<void>;
+}

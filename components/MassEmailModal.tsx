@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 
-interface MassEmailModalProps {
+interface MassCommunicationModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSend: (subject: string, message: string) => Promise<void>;
 }
 
-type EmailStatus = 'idle' | 'sending' | 'success' | 'error';
+type CommunicationStatus = 'idle' | 'sending' | 'success' | 'error';
 
-export const MassEmailModal: React.FC<MassEmailModalProps> = ({ isOpen, onClose, onSend }) => {
+export const MassCommunicationModal: React.FC<MassCommunicationModalProps> = ({ isOpen, onClose, onSend }) => {
     const [subject, setSubject] = useState('');
     const [message, setMessage] = useState('');
-    const [status, setStatus] = useState<EmailStatus>('idle');
+    const [status, setStatus] = useState<CommunicationStatus>('idle');
     const [error, setError] = useState('');
 
     if (!isOpen) return null;
@@ -48,7 +48,7 @@ export const MassEmailModal: React.FC<MassEmailModalProps> = ({ isOpen, onClose,
                 return (
                     <div className="text-center py-10">
                         <div className="w-10 h-10 border-4 border-brand-accent border-t-transparent rounded-full animate-spin mx-auto"></div>
-                        <p className="mt-4 text-white font-semibold">Sending Email...</p>
+                        <p className="mt-4 text-white font-semibold">Sending Message...</p>
                     </div>
                 );
             case 'success':
@@ -57,27 +57,28 @@ export const MassEmailModal: React.FC<MassEmailModalProps> = ({ isOpen, onClose,
                         <svg className="w-14 h-14 text-green-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <p className="mt-4 text-white font-semibold text-xl">Email Sent Successfully!</p>
-                        <p className="text-brand-text-muted">All owners and moderators have been notified.</p>
+                        <p className="mt-4 text-white font-semibold text-xl">Message Sent Successfully!</p>
+                        <p className="text-brand-text-muted">All recipients have been notified by email and in-site message.</p>
                     </div>
                 );
             default:
                 return (
                     <>
-                        <h2 className="text-2xl font-bold text-white mb-6">Send Mass Email</h2>
+                        <h2 className="text-2xl font-bold text-white mb-4">Send Mass Message</h2>
+                        <p className="text-sm text-brand-text-muted mb-6">This will be delivered as an email and an in-site direct message to all owners, co-owners, moderators, and admins.</p>
                         {status === 'error' && <p className="bg-red-500/20 text-red-400 p-3 rounded-md mb-4 text-center">{error}</p>}
                         <form onSubmit={handleSubmit} className="space-y-4">
                              <div>
-                                <label className="text-sm font-bold text-brand-text-muted block mb-2" htmlFor="email-subject">Subject</label>
-                                <input id="email-subject" type="text" value={subject} onChange={(e) => setSubject(e.target.value)} className="w-full bg-black/30 text-white border border-brand-border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-brand-accent transition" required />
+                                <label className="text-sm font-bold text-brand-text-muted block mb-2" htmlFor="comm-subject">Subject</label>
+                                <input id="comm-subject" type="text" value={subject} onChange={(e) => setSubject(e.target.value)} className="w-full bg-black/30 text-white border border-brand-border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-brand-accent transition" required />
                             </div>
                             <div>
-                                <label className="text-sm font-bold text-brand-text-muted block mb-2" htmlFor="email-message">Message</label>
-                                <textarea id="email-message" value={message} onChange={(e) => setMessage(e.target.value)} className="w-full bg-black/30 text-white border border-brand-border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-brand-accent transition" rows={8} required />
+                                <label className="text-sm font-bold text-brand-text-muted block mb-2" htmlFor="comm-message">Message</label>
+                                <textarea id="comm-message" value={message} onChange={(e) => setMessage(e.target.value)} className="w-full bg-black/30 text-white border border-brand-border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-brand-accent transition" rows={8} required />
                             </div>
                             <div className="flex justify-end space-x-4 pt-4">
                                 <button type="button" onClick={onClose} className="bg-brand-border hover:bg-brand-interactive/50 text-white font-bold py-2 px-6 rounded-md transition-colors">Cancel</button>
-                                <button type="submit" className="bg-brand-interactive hover:bg-green-500 text-black font-bold py-2 px-6 rounded-md transition-colors">Send Email</button>
+                                <button type="submit" className="bg-brand-interactive hover:bg-green-500 text-black font-bold py-2 px-6 rounded-md transition-colors">Send Message</button>
                             </div>
                         </form>
                     </>

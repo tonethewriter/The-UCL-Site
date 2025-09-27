@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { RoleBadge } from './RoleBadge';
 import { 
     BellIcon, ShimmeringGamertag, HomeIcon, TrophyIcon, UserGroupIcon, 
-    UserIcon, MessageIcon, ShieldCheckIcon, SettingsIcon, LogoutIcon 
+    UserIcon, MessageIcon, ShieldCheckIcon, SettingsIcon, LogoutIcon, LightbulbIcon
 } from '../constants';
 
 const MenuIcon = () => (
@@ -20,7 +20,7 @@ const CloseIcon = () => (
 );
 
 export const Navbar: React.FC = () => {
-    const { currentUser, logout, notifications } = useAuth();
+    const { currentUser, logout, notifications, feedback } = useAuth();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const profileRef = useRef<HTMLDivElement>(null);
@@ -43,6 +43,7 @@ export const Navbar: React.FC = () => {
     const mobileLinkClasses = `block px-3 py-3 rounded-md text-base font-medium transition-colors flex items-center gap-3`;
     
     const unreadCount = currentUser ? notifications.filter(n => n.userId === currentUser.id && !n.isRead).length : 0;
+    const newFeedbackCount = currentUser?.role === 'admin' ? feedback.filter(f => f.status === 'new').length : 0;
 
     const navLinks = [
         { to: "/", label: "UCL Wall", icon: <HomeIcon />, auth: false, admin: false },
@@ -50,7 +51,15 @@ export const Navbar: React.FC = () => {
         { to: "/teams", label: "Teams", icon: <UserGroupIcon />, auth: false, admin: false },
         { to: "/free-agents", label: "Free Agents", icon: <UserIcon />, auth: false, admin: false },
         { to: "/messages", label: "Messages", icon: <MessageIcon />, auth: true, admin: false },
-        { to: "/admin", label: "Admin", icon: <ShieldCheckIcon />, auth: true, admin: true }
+        { to: "/admin", label: "Dashboard", icon: <ShieldCheckIcon />, auth: true, admin: true },
+        { 
+            to: "/feedback-inbox", 
+            label: "Feedback", 
+            icon: <LightbulbIcon className="h-5 w-5" />, 
+            auth: true, 
+            admin: true,
+            badge: newFeedbackCount,
+        }
     ];
 
     const renderNavLinks = (isMobile = false) => {
@@ -67,6 +76,11 @@ export const Navbar: React.FC = () => {
             >
                 {link.icon}
                 <span>{link.label}</span>
+                 {link.badge && link.badge > 0 && (
+                    <span className="ml-auto bg-brand-accent text-black text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
+                        {link.badge}
+                    </span>
+                )}
             </NavLink>
         ));
     };

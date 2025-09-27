@@ -8,15 +8,22 @@ import { RoleEditorModal } from '../components/RoleEditorModal';
 import { PointsEditorModal } from '../components/PointsEditorModal';
 import { TeamEditorModal } from '../components/TeamEditorModal';
 import { OwnerTransferModal } from '../components/OwnerTransferModal';
-import { MassEmailModal } from '../components/MassEmailModal';
+import { MassCommunicationModal } from '../components/MassEmailModal';
 import { PencilIcon, TrashIcon, CoinIcon, SwitchHorizontalIcon, UserGroupIcon, EnvelopeIcon } from '../constants';
 
-const StatCard: React.FC<{ title: string; value: string | number; }> = ({ title, value }) => (
-    <div className="bg-brand-surface p-6 rounded-lg border border-brand-border">
-        <h3 className="text-sm font-medium text-brand-text-muted">{title}</h3>
-        <p className="mt-1 text-3xl font-semibold text-white">{value}</p>
-    </div>
-);
+const StatCard: React.FC<{ title: string; value: string | number; linkTo?: string }> = ({ title, value, linkTo }) => {
+    const content = (
+        <div className="bg-brand-surface p-6 rounded-lg border border-brand-border hover:border-brand-accent/50 transition-colors h-full">
+            <h3 className="text-sm font-medium text-brand-text-muted">{title}</h3>
+            <p className="mt-1 text-3xl font-semibold text-white">{value}</p>
+        </div>
+    );
+
+    if (linkTo) {
+        return <Link to={linkTo} className="block h-full">{content}</Link>;
+    }
+    return content;
+};
 
 const UserRow: React.FC<{ user: User; onEditRole: (user: User) => void; onDeleteUser: (userId: string) => void; onEditPoints: (user: User) => void; isCurrentUser: boolean; }> = ({ user, onEditRole, onDeleteUser, onEditPoints, isCurrentUser }) => (
     <tr className="border-b border-brand-border hover:bg-brand-surface/40">
@@ -57,7 +64,7 @@ const timeAgo = (dateString: string): string => {
 };
 
 export const AdminDashboardPage: React.FC = () => {
-    const { currentUser, users, posts, quests, teams, activityLog, addQuest, updateQuest, deleteQuest, updateUserRole, deleteUser, deletePost, adjustUserPoints, editTeamDetails, transferTeamOwnership, disbandTeam, toggleModeratorStatus, sendMassEmail } = useAuth();
+    const { currentUser, users, posts, quests, teams, activityLog, feedback, addQuest, updateQuest, deleteQuest, updateUserRole, deleteUser, deletePost, adjustUserPoints, editTeamDetails, transferTeamOwnership, disbandTeam, toggleModeratorStatus, sendMassCommunication } = useAuth();
     
     // Quest state
     const [isQuestModalOpen, setIsQuestModalOpen] = useState(false);
@@ -83,8 +90,8 @@ export const AdminDashboardPage: React.FC = () => {
     const [isDeletePostConfirmOpen, setIsDeletePostConfirmOpen] = useState(false);
     const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
     
-    // Email state
-    const [isMassEmailModalOpen, setIsMassEmailModalOpen] = useState(false);
+    // Communication state
+    const [isMassCommunicationModalOpen, setIsMassCommunicationModalOpen] = useState(false);
 
     // Quest handlers
     const handleOpenCreateQuestModal = () => { setEditingQuest(null); setIsQuestModalOpen(true); };
@@ -138,9 +145,9 @@ export const AdminDashboardPage: React.FC = () => {
     const openDeletePostConfirm = (postId: string) => { setDeletingPostId(postId); setIsDeletePostConfirmOpen(true); };
     const handleConfirmDeletePost = () => { if (deletingPostId) deletePost(deletingPostId); setIsDeletePostConfirmOpen(false); };
     
-    // Email handler
-    const handleSendEmail = async (subject: string, message: string) => {
-        await sendMassEmail(subject, message);
+    // Communication handler
+    const handleSendCommunication = async (subject: string, message: string) => {
+        await sendMassCommunication(subject, message);
     };
 
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -153,8 +160,12 @@ export const AdminDashboardPage: React.FC = () => {
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
                     <StatCard title="Total Users" value={users.length} />
                     <StatCard title="Total Posts" value={posts.length} />
-                    <StatCard title="Total Teams" value={teams.length} />
                     <StatCard title="Active Quests" value={quests.filter(q => q.status !== 'completed').length} />
+                    <StatCard 
+                        title="New Feedback" 
+                        value={feedback.filter(f => f.status === 'new').length}
+                        linkTo="/feedback-inbox"
+                    />
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
@@ -201,13 +212,13 @@ export const AdminDashboardPage: React.FC = () => {
                 <div className="space-y-8">
                     <div className="bg-brand-surface p-6 rounded-lg shadow-lg border border-brand-border/30">
                         <h2 className="text-2xl font-semibold text-white mb-4">Communication Tools</h2>
-                        <p className="text-sm text-brand-text-muted mb-4">Send a mass email to all team owners, co-owners, moderators, and admins.</p>
+                        <p className="text-sm text-brand-text-muted mb-4">Send a mass message to all team owners, co-owners, moderators, and admins. This is delivered via email and in-site message.</p>
                         <button
-                            onClick={() => setIsMassEmailModalOpen(true)}
+                            onClick={() => setIsMassCommunicationModalOpen(true)}
                             className="flex items-center gap-2 bg-brand-interactive hover:bg-green-500 text-black font-bold py-2 px-4 rounded-md transition-colors"
                         >
                             <EnvelopeIcon />
-                            Email All Owners & Mods
+                            Message All Owners & Mods
                         </button>
                     </div>
                     <div className="bg-brand-surface p-6 rounded-lg shadow-lg border border-brand-border/30">
@@ -337,7 +348,7 @@ export const AdminDashboardPage: React.FC = () => {
             <TeamEditorModal isOpen={isTeamEditorOpen} onClose={() => setIsTeamEditorOpen(false)} onSave={handleSaveTeam} team={editingTeam} />
             <OwnerTransferModal isOpen={isOwnerTransferOpen} onClose={() => setIsOwnerTransferOpen(false)} onSave={handleTransferOwner} team={editingTeam} />
             <ConfirmationModal isOpen={isDisbandConfirmOpen} onClose={() => setIsDisbandConfirmOpen(false)} onConfirm={handleConfirmDisband} title="Disband Team" message={`Are you sure you want to disband ${editingTeam?.name}? All members will become free agents. This action is irreversible.`} confirmText="Yes, Disband" />
-            <MassEmailModal isOpen={isMassEmailModalOpen} onClose={() => setIsMassEmailModalOpen(false)} onSend={handleSendEmail} />
+            <MassCommunicationModal isOpen={isMassCommunicationModalOpen} onClose={() => setIsMassCommunicationModalOpen(false)} onSend={handleSendCommunication} />
         </>
     );
 };

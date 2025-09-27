@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import { User, Post, Quest, UserRole, Comment, Message, Notification, NotificationType, NotificationSettings, Team, Invite, Application, InviteStatus, ActivityLog, ActivityLogEntity, CustomEmoji, ProfileVisibility } from '../types';
+import { User, Post, Quest, UserRole, Comment, Message, Notification, NotificationType, NotificationSettings, Team, Invite, Application, InviteStatus, ActivityLog, ActivityLogEntity, CustomEmoji, ProfileVisibility, Feedback, FeedbackStatus } from '../types';
 
 // --- Mock Data (acts as our in-memory database) ---
 
@@ -150,6 +150,11 @@ const initialActivityLog: ActivityLog[] = [
     { id: 'al3', timestamp: new Date(MOCK_DATE.getTime() - 3600 * 1000 * 30).toISOString(), entities: [{ type: 'user', id: '4', text: 'Viper' }, { type: 'text', text: ' created a new team: ' }, { type: 'team', id: 't2', text: 'Bravo Company' }, { type: 'text', text: '.' }] },
 ];
 
+const initialFeedback: Feedback[] = [
+    { id: 'fb1', userId: '2', userGamertag: 'Sniper', type: 'suggestion', message: 'We should have tournaments for different game modes, not just the main one.', timestamp: new Date(MOCK_DATE.getTime() - 3600 * 1000 * 24 * 2).toISOString(), status: 'new' },
+    { id: 'fb2', userId: '5', userGamertag: 'Rogue', type: 'bug_report', message: 'The post button is sometimes unresponsive on mobile. I have to tap it a few times.', timestamp: new Date(MOCK_DATE.getTime() - 3600 * 1000 * 24).toISOString(), status: 'viewed' },
+];
+
 export interface AuthContextType {
   currentUser: User | null;
   users: User[];
@@ -162,6 +167,7 @@ export interface AuthContextType {
   applications: Application[];
   activityLog: ActivityLog[];
   customEmojis: CustomEmoji[];
+  feedback: Feedback[];
   reactionPointReward: number;
   isWallPostingDisabled: boolean;
   login: (identifier: string, pin: string) => Promise<void>;
@@ -186,6 +192,7 @@ export interface AuthContextType {
   deletePost: (postId: string) => void;
   deleteAllPublicPosts: () => void;
   submitFeedback: (type: string, message: string) => Promise<void>;
+  updateFeedbackStatus: (feedbackId: string, status: FeedbackStatus) => Promise<void>;
   adjustUserPoints: (userId: string, amount: number) => void;
   updateUserProfile: (profileData: { gamertag: string; email: string; twitter?: string; twitch?: string; youtube?: string; }) => Promise<void>;
   updateProfilePicture: (pictureUrl: string) => Promise<void>;
@@ -206,7 +213,7 @@ export interface AuthContextType {
   deleteComment: (postId: string, commentId: string) => Promise<void>;
   toggleWallPosting: () => void;
   toggleModeratorStatus: (userId: string) => void;
-  sendMassEmail: (subject: string, message: string) => Promise<void>;
+  sendMassCommunication: (subject: string, message: string) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -250,6 +257,7 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
   const [applications, setApplications] = useState<Application[]>(() => loadFromLocalStorage('ucl_applications', initialApplications));
   const [activityLog, setActivityLog] = useState<ActivityLog[]>(() => loadFromLocalStorage('ucl_activityLog', initialActivityLog));
   const [customEmojis, setCustomEmojis] = useState<CustomEmoji[]>(() => loadFromLocalStorage('ucl_customEmojis', initialCustomEmojis));
+  const [feedback, setFeedback] = useState<Feedback[]>(() => loadFromLocalStorage('ucl_feedback', initialFeedback));
   const [isWallPostingDisabled, setIsWallPostingDisabled] = useState<boolean>(() => loadFromLocalStorage('ucl_wall_posting_disabled', false));
   
   const reactionPointReward = 5;
@@ -266,6 +274,7 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
   useEffect(() => { saveToLocalStorage('ucl_applications', applications); }, [applications]);
   useEffect(() => { saveToLocalStorage('ucl_activityLog', activityLog); }, [activityLog]);
   useEffect(() => { saveToLocalStorage('ucl_customEmojis', customEmojis); }, [customEmojis]);
+  useEffect(() => { saveToLocalStorage('ucl_feedback', feedback); }, [feedback]);
   useEffect(() => { saveToLocalStorage('ucl_wall_posting_disabled', isWallPostingDisabled); }, [isWallPostingDisabled]);
 
   // This effect synchronizes the currentUser state with the master 'users' list.
@@ -644,12 +653,23 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
 
   const submitFeedback = async (type: string, message: string) => {
     if (!currentUser) throw new Error("You must be logged in to submit feedback.");
-    console.log("--- New Feedback Submitted ---");
-    console.log("From:", currentUser.gamertag);
-    console.log("Type:", type);
-    console.log("Message:", message);
-    console.log("----------------------------");
+    
+    const newFeedback: Feedback = {
+      id: `fb${Date.now()}`,
+      userId: currentUser.id,
+      userGamertag: currentUser.gamertag,
+      type,
+      message,
+      timestamp: new Date().toISOString(),
+      status: 'new',
+    };
+
+    setFeedback(prev => [newFeedback, ...prev]);
     await new Promise(resolve => setTimeout(resolve, 500));
+  };
+
+  const updateFeedbackStatus = async (feedbackId: string, status: FeedbackStatus) => {
+    setFeedback(prev => prev.map(fb => fb.id === feedbackId ? { ...fb, status } : fb));
   };
   
   const adjustUserPoints = (userId: string, amount: number) => {
@@ -873,9 +893,9 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
         ));
     };
     
-    const sendMassEmail = async (subject: string, message: string) => {
+    const sendMassCommunication = async (subject: string, message: string) => {
         if (!currentUser || (currentUser.role !== 'admin' && !currentUser.isModerator)) {
-            throw new Error("Insufficient permissions to send mass emails.");
+            throw new Error("Insufficient permissions.");
         }
 
         const recipients = new Map<string, User>();
@@ -883,35 +903,54 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
             const isOwner = user.role.includes('owner');
             const isMod = user.isModerator;
             const isAdmin = user.role === 'admin';
-            if (isOwner || isMod || isAdmin) {
+            // Exclude the sender from the recipient list
+            if ((isOwner || isMod || isAdmin) && user.id !== currentUser.id) {
                 if (!recipients.has(user.id)) {
                     recipients.set(user.id, user);
                 }
             }
         });
 
-        console.log("--- Sending Mass Email ---");
+        const newMessages: Message[] = [];
+        const fullMessageContent = `**${subject}**\n\n${message}`;
+
+        console.log("--- Sending Mass Communication ---");
         console.log("From:", currentUser.gamertag);
         console.log("Subject:", subject);
         console.log("Message:", message);
         console.log("Recipients:", Array.from(recipients.values()).map(u => u.gamertag));
         console.log("--------------------------");
 
-        recipients.forEach(user => {
-            console.log(`(SIMULATE EMAIL) Sending mass email to ${user.email}...`);
+        recipients.forEach(recipient => {
+            // Simulate email
+            console.log(`(SIMULATE EMAIL) Sending mass email to ${recipient.email}...`);
+
+            // Create in-site message
+            const channelId = ['dm', currentUser.id, recipient.id].sort().join('_');
+            const newMessage: Message = {
+                id: `m${Date.now()}_${recipient.id}`, // Unique ID for messages created in the same tick
+                senderId: currentUser.id,
+                senderGamertag: currentUser.gamertag,
+                channelId,
+                content: fullMessageContent,
+                timestamp: new Date().toISOString(),
+            };
+            newMessages.push(newMessage);
         });
 
+        setMessages(prev => [...prev, ...newMessages]);
+        
         // Simulate network delay
         await new Promise(resolve => setTimeout(resolve, 1000));
 
         createActivityLog([
             { type: 'user', id: currentUser.id, text: currentUser.gamertag },
-            { type: 'text', text: ` sent a mass email to all owners and moderators.` }
+            { type: 'text', text: ` sent a mass message to all owners and moderators.` }
         ]);
     };
 
 
-  const value = { currentUser, users, posts, quests, messages, notifications, teams, invites, applications, activityLog, customEmojis, reactionPointReward, isWallPostingDisabled, login, logout, signUp, addPost, toggleReaction, addComment, claimQuestReward, updateQuestProgress, sendMessage, leaveTeam, toggleFreeAgentStatus, markNotificationAsRead, markAllNotificationsAsRead, updateNotificationSettings, addQuest, updateQuest, deleteQuest, deleteUser, updateUserRole, deletePost, deleteAllPublicPosts, submitFeedback, adjustUserPoints, updateUserProfile, updateProfilePicture, sendInvite, respondToInvite, applyToTeam, respondToApplication, editTeamDetails, transferTeamOwnership, disbandTeam, pinPost, updateProfileBanner, updateTeamBanner, addCustomEmoji, deleteCustomEmoji, updateProfileVisibility, timeoutUser, deleteComment, toggleWallPosting, toggleModeratorStatus, sendMassEmail };
+  const value = { currentUser, users, posts, quests, messages, notifications, teams, invites, applications, activityLog, customEmojis, feedback, reactionPointReward, isWallPostingDisabled, login, logout, signUp, addPost, toggleReaction, addComment, claimQuestReward, updateQuestProgress, sendMessage, leaveTeam, toggleFreeAgentStatus, markNotificationAsRead, markAllNotificationsAsRead, updateNotificationSettings, addQuest, updateQuest, deleteQuest, deleteUser, updateUserRole, deletePost, deleteAllPublicPosts, submitFeedback, updateFeedbackStatus, adjustUserPoints, updateUserProfile, updateProfilePicture, sendInvite, respondToInvite, applyToTeam, respondToApplication, editTeamDetails, transferTeamOwnership, disbandTeam, pinPost, updateProfileBanner, updateTeamBanner, addCustomEmoji, deleteCustomEmoji, updateProfileVisibility, timeoutUser, deleteComment, toggleWallPosting, toggleModeratorStatus, sendMassCommunication };
 
   // FIX: Corrected a typo from `Auth.Provider` to `AuthContext.Provider` to fix a 'Cannot find name' error.
   return (

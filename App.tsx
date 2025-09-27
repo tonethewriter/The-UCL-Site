@@ -18,6 +18,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { FeedbackButton } from './components/FeedbackButton';
 import { TeamsListPage } from './pages/TeamsListPage';
 import { TeamPage } from './pages/TeamPage';
+import { FeedbackInboxPage } from './pages/FeedbackInboxPage';
 
 const App: React.FC = () => {
     return (
@@ -78,6 +79,14 @@ const App: React.FC = () => {
                             element={
                                 <ProtectedRoute>
                                     <AdminDashboardPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/feedback-inbox"
+                            element={
+                                <ProtectedRoute>
+                                    <FeedbackInboxPage />
                                 </ProtectedRoute>
                             }
                         />
