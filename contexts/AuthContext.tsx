@@ -206,6 +206,7 @@ export interface AuthContextType {
   deleteComment: (postId: string, commentId: string) => Promise<void>;
   toggleWallPosting: () => void;
   toggleModeratorStatus: (userId: string) => void;
+  sendMassEmail: (subject: string, message: string) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -871,9 +872,46 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
             u.id === userId ? { ...u, isModerator: !u.isModerator } : u
         ));
     };
+    
+    const sendMassEmail = async (subject: string, message: string) => {
+        if (!currentUser || (currentUser.role !== 'admin' && !currentUser.isModerator)) {
+            throw new Error("Insufficient permissions to send mass emails.");
+        }
+
+        const recipients = new Map<string, User>();
+        users.forEach(user => {
+            const isOwner = user.role.includes('owner');
+            const isMod = user.isModerator;
+            const isAdmin = user.role === 'admin';
+            if (isOwner || isMod || isAdmin) {
+                if (!recipients.has(user.id)) {
+                    recipients.set(user.id, user);
+                }
+            }
+        });
+
+        console.log("--- Sending Mass Email ---");
+        console.log("From:", currentUser.gamertag);
+        console.log("Subject:", subject);
+        console.log("Message:", message);
+        console.log("Recipients:", Array.from(recipients.values()).map(u => u.gamertag));
+        console.log("--------------------------");
+
+        recipients.forEach(user => {
+            console.log(`(SIMULATE EMAIL) Sending mass email to ${user.email}...`);
+        });
+
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        createActivityLog([
+            { type: 'user', id: currentUser.id, text: currentUser.gamertag },
+            { type: 'text', text: ` sent a mass email to all owners and moderators.` }
+        ]);
+    };
 
 
-  const value = { currentUser, users, posts, quests, messages, notifications, teams, invites, applications, activityLog, customEmojis, reactionPointReward, isWallPostingDisabled, login, logout, signUp, addPost, toggleReaction, addComment, claimQuestReward, updateQuestProgress, sendMessage, leaveTeam, toggleFreeAgentStatus, markNotificationAsRead, markAllNotificationsAsRead, updateNotificationSettings, addQuest, updateQuest, deleteQuest, deleteUser, updateUserRole, deletePost, deleteAllPublicPosts, submitFeedback, adjustUserPoints, updateUserProfile, updateProfilePicture, sendInvite, respondToInvite, applyToTeam, respondToApplication, editTeamDetails, transferTeamOwnership, disbandTeam, pinPost, updateProfileBanner, updateTeamBanner, addCustomEmoji, deleteCustomEmoji, updateProfileVisibility, timeoutUser, deleteComment, toggleWallPosting, toggleModeratorStatus };
+  const value = { currentUser, users, posts, quests, messages, notifications, teams, invites, applications, activityLog, customEmojis, reactionPointReward, isWallPostingDisabled, login, logout, signUp, addPost, toggleReaction, addComment, claimQuestReward, updateQuestProgress, sendMessage, leaveTeam, toggleFreeAgentStatus, markNotificationAsRead, markAllNotificationsAsRead, updateNotificationSettings, addQuest, updateQuest, deleteQuest, deleteUser, updateUserRole, deletePost, deleteAllPublicPosts, submitFeedback, adjustUserPoints, updateUserProfile, updateProfilePicture, sendInvite, respondToInvite, applyToTeam, respondToApplication, editTeamDetails, transferTeamOwnership, disbandTeam, pinPost, updateProfileBanner, updateTeamBanner, addCustomEmoji, deleteCustomEmoji, updateProfileVisibility, timeoutUser, deleteComment, toggleWallPosting, toggleModeratorStatus, sendMassEmail };
 
   // FIX: Corrected a typo from `Auth.Provider` to `AuthContext.Provider` to fix a 'Cannot find name' error.
   return (

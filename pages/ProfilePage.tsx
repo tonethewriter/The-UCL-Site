@@ -4,7 +4,6 @@ import { Navigate, Link } from 'react-router-dom';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { Invite, Application, ProfileVisibility } from '../types';
 import { EnvelopeIcon, TrashIcon, TwitterIcon, TwitchIcon, YouTubeIcon, ShimmeringGamertag } from '../constants';
-import { PostCard } from '../components/PostCard';
 import { fileToBase64 } from '../constants';
 
 const StatCard: React.FC<{ label: string; value: string | number; icon?: React.ReactNode }> = ({ label, value, icon }) => (
@@ -403,76 +402,98 @@ export const ProfilePage: React.FC = () => {
     return (
         <>
             <div className="max-w-5xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
-                {/* --- NEW HEADER START --- */}
                 <div className="bg-brand-surface shadow-lg rounded-xl border border-brand-border/50 overflow-hidden">
-                    {/* Banner Image */}
-                    <div className="h-36 md:h-48 bg-brand-border relative group">
-                        {currentUser.profileBanner ? (
-                            <img src={currentUser.profileBanner} alt={`${currentUser.gamertag}'s banner`} className="w-full h-full object-cover" />
-                        ) : (
-                            <div className="w-full h-full bg-gradient-to-r from-brand-surface via-brand-border to-brand-surface"></div>
-                        )}
-                        {isPlusMember && (
-                            <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <input type="file" ref={bannerInputRef} onChange={handleBannerFileChange} className="hidden" accept="image/png, image/jpeg, image/gif"/>
-                                <button onClick={() => bannerInputRef.current?.click()} className="text-xs bg-black/50 hover:bg-black/80 text-white font-semibold py-1 px-3 rounded-md transition-colors">
-                                    {bannerUrl ? 'Change Banner' : 'Upload Banner'}
-                                </button>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Profile Info Section */}
-                    <div className="p-4 sm:p-6">
-                        <div className="flex flex-col sm:flex-row sm:items-end sm:space-x-5">
-                            {/* Profile Picture */}
-                            <div className="-mt-20 sm:-mt-24 flex-shrink-0 relative group">
-                                {currentUser.profilePicture ? (
-                                    <img src={currentUser.profilePicture} alt={currentUser.gamertag} className="h-24 w-24 sm:h-32 sm:w-32 rounded-full object-cover ring-4 ring-brand-surface bg-brand-border" />
+                    {isPlusMember ? (
+                        <>
+                            {/* --- HEADER FOR PLUS MEMBERS --- */}
+                            <div className="h-36 md:h-48 bg-brand-border relative group">
+                                {currentUser.profileBanner ? (
+                                    <img src={currentUser.profileBanner} alt={`${currentUser.gamertag}'s banner`} className="w-full h-full object-cover" />
                                 ) : (
-                                     <div className="h-24 w-24 sm:h-32 sm:w-32 rounded-full bg-brand-accent flex items-center justify-center font-bold text-black text-6xl ring-4 ring-brand-surface">
-                                        {currentUser.gamertag.charAt(0).toUpperCase()}
-                                    </div>
+                                    <div className="w-full h-full bg-gradient-to-r from-brand-surface via-brand-border to-brand-surface"></div>
                                 )}
-                                <button onClick={() => profilePicInputRef.current?.click()} className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center text-white font-bold opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                                    Edit
-                                </button>
-                                <input type="file" ref={profilePicInputRef} onChange={handleChangePicture} className="hidden" accept="image/png, image/jpeg, image/gif"/>
-                            </div>
-                            
-                            <div className="mt-4 sm:mt-0 w-full flex-grow flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4">
-                                <div className="text-center sm:text-left">
-                                    <h1 className="text-2xl sm:text-4xl font-bold text-white break-words">
-                                        <ShimmeringGamertag user={currentUser} />
-                                    </h1>
-                                    <p className="text-sm text-brand-text-muted mt-1 break-words">{currentUser.email}</p>
-                                </div>
-                                
-                                <div className="flex items-center gap-4">
-                                     <button onClick={handleFABtnClick} className={`font-bold py-2 px-4 rounded-lg transition-colors text-sm ${currentUser.isFreeAgent ? 'bg-yellow-600 hover:bg-yellow-700 text-white' : 'bg-brand-border hover:bg-brand-surface text-white'}`}>
-                                        {currentUser.isFreeAgent ? 'Remove FA Status' : 'Become Free Agent'}
-                                    </button>
-                                    <button onClick={scrollToEdit} className="bg-brand-interactive hover:bg-green-500 text-black font-bold py-2 px-4 rounded-lg transition-transform hover:scale-105 text-sm">
-                                        Edit Profile
+                                <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <input type="file" ref={bannerInputRef} onChange={handleBannerFileChange} className="hidden" accept="image/png, image/jpeg, image/gif"/>
+                                    <button onClick={() => bannerInputRef.current?.click()} className="text-xs bg-black/50 hover:bg-black/80 text-white font-semibold py-1 px-3 rounded-md transition-colors">
+                                        {bannerUrl ? 'Change Banner' : 'Upload Banner'}
                                     </button>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <div className="mt-6 flex flex-wrap gap-2 items-center justify-center sm:justify-start">
-                            <div className="bg-black/30 px-3 py-1 rounded-full text-sm text-brand-text"><strong>Role:</strong> {roleDisplayMap[currentUser.role]}</div>
-                            {currentUser.isModerator && (
-                                <div className="bg-blue-600/20 text-blue-300 px-3 py-1 rounded-full text-sm font-semibold">Moderator</div>
-                            )}
-                            {team && (<div className="bg-black/30 px-3 py-1 rounded-full text-sm text-brand-text"><strong>Team:</strong> <Link to={`/teams/${team.id}`} className="font-semibold hover:underline">{team.name}</Link></div>)}
-                            <div className="bg-black/30 px-3 py-1 rounded-full text-sm text-brand-text"><strong>UCL Points:</strong> <span className="text-brand-accent">{currentUser.uclPoints.toLocaleString()}</span></div>
-                             {team && canLeaveTeam && (
-                                <button onClick={() => setIsLeaveModalOpen(true)} className="text-xs text-red-400 hover:underline bg-red-500/10 px-2 py-1 rounded-md">Leave Team</button>
-                            )}
-                        </div>
+
+                            <div className="p-4 sm:p-6">
+                                <div className="flex flex-col sm:flex-row sm:items-end sm:space-x-5">
+                                    <div className="-mt-20 sm:-mt-24 flex-shrink-0 relative group">
+                                        <img src={currentUser.profilePicture} alt={currentUser.gamertag} className="h-24 w-24 sm:h-32 sm:w-32 rounded-full object-cover ring-4 ring-brand-surface bg-brand-border" />
+                                        <button onClick={() => profilePicInputRef.current?.click()} className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center text-white font-bold opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                                            Edit
+                                        </button>
+                                        <input type="file" ref={profilePicInputRef} onChange={handleChangePicture} className="hidden" accept="image/png, image/jpeg, image/gif"/>
+                                    </div>
+                                    <div className="mt-4 sm:mt-0 w-full flex-grow flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4">
+                                        <div className="text-center sm:text-left">
+                                            <h1 className="text-2xl sm:text-4xl font-bold text-white break-words">
+                                                <ShimmeringGamertag user={currentUser} />
+                                            </h1>
+                                            <p className="text-sm text-brand-text-muted mt-1 break-words">{currentUser.email}</p>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <button onClick={handleFABtnClick} className={`font-bold py-2 px-4 rounded-lg transition-colors text-sm ${currentUser.isFreeAgent ? 'bg-yellow-600 hover:bg-yellow-700 text-white' : 'bg-brand-border hover:bg-brand-surface text-white'}`}>
+                                                {currentUser.isFreeAgent ? 'Remove FA Status' : 'Become Free Agent'}
+                                            </button>
+                                            <button onClick={scrollToEdit} className="bg-brand-interactive hover:bg-green-500 text-black font-bold py-2 px-4 rounded-lg transition-transform hover:scale-105 text-sm">
+                                                Edit Profile
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="mt-6 flex flex-wrap gap-2 items-center justify-center sm:justify-start">
+                                    {/* ... badge info ... */}
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            {/* --- COMPACT HEADER FOR FREE USERS --- */}
+                            <div className="p-6 sm:p-8">
+                                <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
+                                    <div className="relative group flex-shrink-0">
+                                        <img src={currentUser.profilePicture} alt={currentUser.gamertag} className="h-24 w-24 sm:h-32 sm:w-32 rounded-full object-cover ring-4 ring-brand-surface bg-brand-border" />
+                                        <button onClick={() => profilePicInputRef.current?.click()} className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center text-white font-bold opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                                            Edit
+                                        </button>
+                                        <input type="file" ref={profilePicInputRef} onChange={handleChangePicture} className="hidden" accept="image/png, image/jpeg, image/gif"/>
+                                    </div>
+                                    <div className="flex-grow">
+                                        <h1 className="text-3xl sm:text-4xl font-bold text-white break-words">
+                                            <ShimmeringGamertag user={currentUser} />
+                                        </h1>
+                                        <p className="text-sm text-brand-text-muted mt-1 break-words">{currentUser.email}</p>
+                                        <div className="mt-4 flex items-center justify-center sm:justify-start gap-4">
+                                            <button onClick={handleFABtnClick} className={`font-bold py-2 px-4 rounded-lg transition-colors text-sm ${currentUser.isFreeAgent ? 'bg-yellow-600 hover:bg-yellow-700 text-white' : 'bg-brand-border hover:bg-brand-surface text-white'}`}>
+                                                {currentUser.isFreeAgent ? 'Remove FA Status' : 'Become Free Agent'}
+                                            </button>
+                                            <button onClick={scrollToEdit} className="bg-brand-interactive hover:bg-green-500 text-black font-bold py-2 px-4 rounded-lg transition-transform hover:scale-105 text-sm">
+                                                Edit Profile
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </>
+                    )}
+                    {/* --- SHARED BADGE INFO --- */}
+                    <div className={`flex flex-wrap gap-2 items-center justify-center sm:justify-start ${isPlusMember ? 'px-6 pb-6' : 'p-6 border-t border-brand-border/50'}`}>
+                        <div className="bg-black/30 px-3 py-1 rounded-full text-sm text-brand-text"><strong>Role:</strong> {roleDisplayMap[currentUser.role]}</div>
+                         {currentUser.isModerator && (
+                            <div className="bg-blue-600/20 text-blue-300 px-3 py-1 rounded-full text-sm font-semibold">Moderator</div>
+                        )}
+                        {team && (<div className="bg-black/30 px-3 py-1 rounded-full text-sm text-brand-text"><strong>Team:</strong> <Link to={`/teams/${team.id}`} className="font-semibold hover:underline">{team.name}</Link></div>)}
+                        <div className="bg-black/30 px-3 py-1 rounded-full text-sm text-brand-text"><strong>UCL Points:</strong> <span className="text-brand-accent">{currentUser.uclPoints.toLocaleString()}</span></div>
+                         {team && canLeaveTeam && (
+                            <button onClick={() => setIsLeaveModalOpen(true)} className="text-xs text-red-400 hover:underline bg-red-500/10 px-2 py-1 rounded-md">Leave Team</button>
+                        )}
                     </div>
                 </div>
-                {/* --- NEW HEADER END --- */}
 
                 {/* --- PAGE CONTENT --- */}
                 <div className="mt-8 space-y-8">

@@ -26,16 +26,29 @@ export const UserProfilePage: React.FC = () => {
     const [isTimeoutModalOpen, setIsTimeoutModalOpen] = useState(false);
 
     const user = users.find(u => u.id === userId);
-    const team = user?.teamId ? teams.find(t => t.id === user.teamId) : null;
     
+    if (!user) {
+        return (
+            <div className="text-center py-20">
+                <h1 className="text-3xl font-bold text-brand-accent">User Not Found</h1>
+                <p className="text-brand-text-muted mt-2">Could not find a user with the specified ID.</p>
+                <Link to="/" className="mt-6 inline-block bg-brand-interactive hover:bg-green-500 text-black font-bold py-2 px-6 rounded-lg transition-transform hover:scale-105">
+                    Go to Home
+                </Link>
+            </div>
+        );
+    }
+    
+    const team = user.teamId ? teams.find(t => t.id === user.teamId) : null;
+    const isPlusUser = user.role.includes('_plus') || user.role === 'admin';
     const isModeratorView = currentUser?.role === 'admin' || !!currentUser?.isModerator;
     const canViewAll = isModeratorView || currentUser?.id === user?.id;
 
-    const showPinnedPost = canViewAll || (user?.profileVisibility?.showPinnedPost ?? true);
-    const pinnedPost = user?.pinnedPostId && showPinnedPost ? posts.find(p => p.id === user.pinnedPostId) : null;
+    const showPinnedPost = canViewAll || (user.profileVisibility?.showPinnedPost ?? true);
+    const pinnedPost = user.pinnedPostId && showPinnedPost ? posts.find(p => p.id === user.pinnedPostId) : null;
     const pinnedPostAuthor = pinnedPost ? users.find(u => u.id === pinnedPost.authorId) : null;
     
-    const isTimedOut = user?.timeoutUntil && new Date(user.timeoutUntil) > new Date();
+    const isTimedOut = user.timeoutUntil && new Date(user.timeoutUntil) > new Date();
 
     const handleMessageClick = () => {
         if (!currentUser || !user) return;
@@ -48,18 +61,6 @@ export const UserProfilePage: React.FC = () => {
         await timeoutUser(user.id, durationHours);
         setIsTimeoutModalOpen(false);
     };
-
-    if (!user) {
-        return (
-            <div className="text-center py-20">
-                <h1 className="text-3xl font-bold text-brand-accent">User Not Found</h1>
-                <p className="text-brand-text-muted mt-2">Could not find a user with the specified ID.</p>
-                <Link to="/" className="mt-6 inline-block bg-brand-interactive hover:bg-green-500 text-black font-bold py-2 px-6 rounded-lg transition-transform hover:scale-105">
-                    Go to Home
-                </Link>
-            </div>
-        );
-    }
     
     const roleDisplayMap = {
         player: 'Player',
@@ -79,79 +80,70 @@ export const UserProfilePage: React.FC = () => {
     return (
         <>
             <div className="bg-black">
-                {/* --- NEW HEADER START --- */}
                 <div className="max-w-5xl mx-auto">
                     <div className="bg-brand-surface shadow-lg rounded-b-xl border-x border-b border-brand-border/50 overflow-hidden">
-                        {/* Banner Image */}
-                        <div className="h-36 md:h-48 bg-brand-border relative">
-                            {user.profileBanner ? (
-                                <img src={user.profileBanner} alt={`${user.gamertag}'s banner`} className="w-full h-full object-cover" />
-                            ) : (
-                                <div className="w-full h-full bg-gradient-to-r from-brand-surface via-brand-border to-brand-surface"></div>
-                            )}
-                        </div>
-
-                        {/* Profile Info Section */}
-                        <div className="p-4 sm:p-6">
-                            <div className="flex flex-col sm:flex-row sm:items-end sm:space-x-5">
-                                {/* Profile Picture */}
-                                <div className="-mt-20 sm:-mt-24 flex-shrink-0">
-                                    {user.profilePicture ? (
-                                        <img src={user.profilePicture} alt={user.gamertag} className="h-24 w-24 sm:h-32 sm:w-32 rounded-full object-cover ring-4 ring-brand-surface bg-brand-border" />
+                       {isPlusUser ? (
+                            <>
+                                {/* --- HEADER FOR PLUS MEMBERS --- */}
+                                <div className="h-36 md:h-48 bg-brand-border relative">
+                                    {user.profileBanner ? (
+                                        <img src={user.profileBanner} alt={`${user.gamertag}'s banner`} className="w-full h-full object-cover" />
                                     ) : (
-                                        <div className="h-24 w-24 sm:h-32 sm:w-32 rounded-full bg-brand-accent flex items-center justify-center font-bold text-black text-6xl ring-4 ring-brand-surface">
-                                            {user.gamertag.charAt(0).toUpperCase()}
-                                        </div>
+                                        <div className="w-full h-full bg-gradient-to-r from-brand-surface via-brand-border to-brand-surface"></div>
                                     )}
                                 </div>
-                                
-                                <div className="mt-4 sm:mt-0 w-full flex-grow flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4">
-                                    <div className="text-center sm:text-left">
-                                        <h1 className="text-2xl sm:text-4xl font-bold text-white break-words">
-                                            <ShimmeringGamertag user={user} />
-                                        </h1>
-                                        {canViewAll ? (
-                                            <p className="text-sm text-brand-text-muted mt-1 break-words">{user.email}</p>
-                                        ) : (
-                                            <p className="text-sm text-brand-text-muted mt-1 break-words italic">[Email Hidden for Privacy]</p>
-                                        )}
-                                    </div>
-                                    
-                                    <div className="flex items-center gap-4">
-                                        {showSocials && (
-                                            <div className="flex items-center justify-center space-x-4">
-                                                {user.twitter && ( <a href={user.twitter} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors" title="Twitter"><TwitterIcon className="w-6 h-6" /></a> )}
-                                                {user.twitch && ( <a href={user.twitch} target="_blank" rel="noopener noreferrer" className="text-purple-500 hover:text-purple-400 transition-colors" title="Twitch"><TwitchIcon className="w-6 h-6" /></a> )}
-                                                {user.youtube && ( <a href={user.youtube} target="_blank" rel="noopener noreferrer" className="text-red-600 hover:text-red-500 transition-colors" title="YouTube"><YouTubeIcon className="w-6 h-6" /></a> )}
+                                <div className="p-4 sm:p-6">
+                                    <div className="flex flex-col sm:flex-row sm:items-end sm:space-x-5">
+                                        <div className="-mt-20 sm:-mt-24 flex-shrink-0">
+                                            <img src={user.profilePicture} alt={user.gamertag} className="h-24 w-24 sm:h-32 sm:w-32 rounded-full object-cover ring-4 ring-brand-surface bg-brand-border" />
+                                        </div>
+                                        <div className="mt-4 sm:mt-0 w-full flex-grow flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4">
+                                            <div className="text-center sm:text-left">
+                                                <h1 className="text-2xl sm:text-4xl font-bold text-white break-words"><ShimmeringGamertag user={user} /></h1>
+                                                <p className="text-sm text-brand-text-muted mt-1 break-words">{canViewAll ? user.email : '[Email Hidden]'}</p>
                                             </div>
-                                        )}
-                                        {canMessageUser && (
-                                            <button onClick={handleMessageClick} className="flex items-center justify-center gap-2 bg-brand-interactive hover:bg-green-500 text-black font-bold py-2 px-4 rounded-lg transition-transform hover:scale-105 text-sm">
-                                                <MessageIcon className="w-5 h-5" />
-                                                <span>Message</span>
-                                            </button>
-                                        )}
+                                            <div className="flex items-center gap-4">
+                                                 {/* Socials & Message Button */}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            
-                            <div className="mt-6 flex flex-wrap gap-2 items-center justify-center sm:justify-start">
-                                <div className="bg-black/30 px-3 py-1 rounded-full text-sm text-brand-text"><strong>Role:</strong> {roleDisplayMap[user.role]}</div>
-                                {user.isModerator && (
-                                    <div className="bg-blue-600/20 text-blue-300 px-3 py-1 rounded-full text-sm font-semibold">Moderator</div>
-                                )}
-                                {team && showTeam && (<div className="bg-black/30 px-3 py-1 rounded-full text-sm text-brand-text"><strong>Team:</strong> <Link to={`/teams/${team.id}`} className="font-semibold hover:underline">{team.name}</Link></div>)}
-                                {user.isFreeAgent && (<div className="bg-yellow-600/20 text-yellow-300 px-3 py-1 rounded-full text-sm font-semibold">Free Agent</div>)}
-                                {showPoints && (<div className="bg-black/30 px-3 py-1 rounded-full text-sm text-brand-text"><strong>UCL Points:</strong> <span className="text-brand-accent">{user.uclPoints.toLocaleString()}</span></div>)}
-                            </div>
+                            </>
+                        ) : (
+                            <>
+                                {/* --- COMPACT HEADER FOR FREE USERS --- */}
+                                <div className="p-6 sm:p-8">
+                                    <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
+                                        <div className="flex-shrink-0">
+                                            <img src={user.profilePicture} alt={user.gamertag} className="h-24 w-24 sm:h-32 sm:w-32 rounded-full object-cover ring-4 ring-brand-surface bg-brand-border" />
+                                        </div>
+                                        <div className="flex-grow">
+                                            <h1 className="text-3xl sm:text-4xl font-bold text-white break-words"><ShimmeringGamertag user={user} /></h1>
+                                            <p className="text-sm text-brand-text-muted mt-1 break-words">{canViewAll ? user.email : '[Email Hidden]'}</p>
+                                             <div className="mt-4 flex items-center justify-center sm:justify-start gap-4">
+                                                {/* Socials & Message Button */}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
+                        )}
 
-                            {isTimedOut && (
-                                 <div className="mt-4 p-3 bg-red-900/50 border border-red-500/50 rounded-lg text-red-300 text-sm">This user is currently timed out until {new Date(user.timeoutUntil!).toLocaleString()}.</div>
+                        {/* --- SHARED PROFILE DETAILS --- */}
+                         <div className={`flex flex-wrap gap-2 items-center justify-center sm:justify-start ${isPlusUser ? 'px-6 pb-6' : 'p-6 border-t border-brand-border/50'}`}>
+                            <div className="bg-black/30 px-3 py-1 rounded-full text-sm text-brand-text"><strong>Role:</strong> {roleDisplayMap[user.role]}</div>
+                             {user.isModerator && (
+                                <div className="bg-blue-600/20 text-blue-300 px-3 py-1 rounded-full text-sm font-semibold">Moderator</div>
                             )}
+                            {team && showTeam && (<div className="bg-black/30 px-3 py-1 rounded-full text-sm text-brand-text"><strong>Team:</strong> <Link to={`/teams/${team.id}`} className="font-semibold hover:underline">{team.name}</Link></div>)}
+                            {user.isFreeAgent && (<div className="bg-yellow-600/20 text-yellow-300 px-3 py-1 rounded-full text-sm font-semibold">Free Agent</div>)}
+                            {showPoints && (<div className="bg-black/30 px-3 py-1 rounded-full text-sm text-brand-text"><strong>UCL Points:</strong> <span className="text-brand-accent">{user.uclPoints.toLocaleString()}</span></div>)}
                         </div>
+                        {isTimedOut && (
+                             <div className="m-6 mt-0 p-3 bg-red-900/50 border border-red-500/50 rounded-lg text-red-300 text-sm">This user is currently timed out until {new Date(user.timeoutUntil!).toLocaleString()}.</div>
+                        )}
                     </div>
                 </div>
-                {/* --- NEW HEADER END --- */}
                 
                 <div className="max-w-5xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
                     {isModeratorView && currentUser?.id !== user.id && (
