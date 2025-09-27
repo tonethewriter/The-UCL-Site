@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { Navigate, Link } from 'react-router-dom';
 import { ConfirmationModal } from '../components/ConfirmationModal';
-import { Invite, Application, ProfileVisibility } from '../types';
+import { Invite, Application } from '../types';
 import { EnvelopeIcon, TrashIcon, TwitterIcon, TwitchIcon, YouTubeIcon, ShimmeringGamertag } from '../constants';
 import { fileToBase64 } from '../constants';
 
@@ -59,33 +59,8 @@ const ApplicationCard: React.FC<{ application: Application }> = ({ application }
     );
 };
 
-const SettingsToggle: React.FC<{ label: string; description: string; isChecked: boolean; onChange: (isChecked: boolean) => void; }> = ({ label, description, isChecked, onChange }) => {
-  return (
-    <div className="flex items-center justify-between py-4">
-      <div className="flex-1 pr-4">
-        <h3 className="text-white font-semibold">{label}</h3>
-        <p className="text-sm text-brand-text-muted">{description}</p>
-      </div>
-        <button
-          type="button"
-          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-accent focus:ring-offset-2 focus:ring-offset-brand-surface ${
-            isChecked ? 'bg-brand-interactive' : 'bg-brand-border'
-          }`}
-          onClick={() => onChange(!isChecked)}
-        >
-          <span
-            className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-              isChecked ? 'translate-x-5' : 'translate-x-0'
-            }`}
-          />
-        </button>
-    </div>
-  );
-};
-
-
 export const ProfilePage: React.FC = () => {
-    const { currentUser, teams, posts, quests, invites, applications, customEmojis, leaveTeam, toggleFreeAgentStatus, updateUserProfile, updateProfileBanner, addCustomEmoji, deleteCustomEmoji, updateProfileVisibility, updateProfilePicture } = useAuth();
+    const { currentUser, teams, posts, quests, invites, applications, customEmojis, leaveTeam, toggleFreeAgentStatus, updateUserProfile, updateProfileBanner, addCustomEmoji, deleteCustomEmoji, updateProfilePicture } = useAuth();
     const profilePicInputRef = useRef<HTMLInputElement>(null);
     const bannerInputRef = useRef<HTMLInputElement>(null);
     const editSectionRef = useRef<HTMLDivElement>(null);
@@ -354,51 +329,6 @@ export const ProfilePage: React.FC = () => {
         );
     };
 
-    const ProfileVisibilityManager = () => {
-        const [visibility, setVisibility] = useState<ProfileVisibility>(
-            currentUser.profileVisibility || { showTeam: true, showSocials: true, showPoints: true, showPinnedPost: true }
-        );
-
-        const handleVisibilityChange = (key: keyof ProfileVisibility, value: boolean) => {
-            const newVisibility = { ...visibility, [key]: value };
-            setVisibility(newVisibility);
-            updateProfileVisibility(newVisibility);
-        };
-
-        return (
-            <div className="bg-brand-surface p-6 rounded-xl shadow-lg border border-brand-border/50">
-                <h2 className="text-2xl font-semibold text-brand-accent mb-2 border-b border-brand-border/50 pb-4">⭐ Profile Visibility</h2>
-                <p className="text-sm text-brand-text-muted my-4">Choose what information is visible to others on your public profile page.</p>
-                <div className="divide-y divide-brand-border/50">
-                    <SettingsToggle 
-                        label="Show My Team"
-                        description="Display your current team affiliation."
-                        isChecked={visibility.showTeam}
-                        onChange={(val) => handleVisibilityChange('showTeam', val)}
-                    />
-                     <SettingsToggle 
-                        label="Show Social Links"
-                        description="Display your Twitter, Twitch, and YouTube links."
-                        isChecked={visibility.showSocials}
-                        onChange={(val) => handleVisibilityChange('showSocials', val)}
-                    />
-                    <SettingsToggle 
-                        label="Show UCL Points"
-                        description="Display your total UCL points."
-                        isChecked={visibility.showPoints}
-                        onChange={(val) => handleVisibilityChange('showPoints', val)}
-                    />
-                    <SettingsToggle 
-                        label="Show Pinned Post"
-                        description="Display your pinned post at the top of your profile."
-                        isChecked={visibility.showPinnedPost}
-                        onChange={(val) => handleVisibilityChange('showPinnedPost', val)}
-                    />
-                </div>
-            </div>
-        )
-    };
-
     return (
         <>
             <div className="max-w-5xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
@@ -549,7 +479,6 @@ export const ProfilePage: React.FC = () => {
                         </form>
                     </div>
                     
-                    {isPlusMember && <ProfileVisibilityManager />}
                     {isPlusMember && <StatsDashboard />}
                     {isPlusMember && <CustomEmojiManager />}
                 </div>

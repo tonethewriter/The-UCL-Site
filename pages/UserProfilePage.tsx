@@ -71,11 +71,28 @@ export const UserProfilePage: React.FC = () => {
         admin: 'Administrator'
     };
 
-    const canMessageUser = (currentUser?.role === 'team_owner_plus' || isModeratorView) && currentUser.id !== user.id;
+    const canMessageUser = currentUser && (currentUser.role === 'team_owner_plus' || isModeratorView) && currentUser.id !== user.id;
 
     const showTeam = canViewAll || (user.profileVisibility?.showTeam ?? true);
     const showSocials = canViewAll || (user.profileVisibility?.showSocials ?? true);
     const showPoints = canViewAll || (user.profileVisibility?.showPoints ?? true);
+
+    const socialLinksBlock = (
+        <div className="flex items-center gap-4">
+            {showSocials && (user.twitter || user.twitch || user.youtube) && (
+                <div className="flex items-center gap-3">
+                    {user.twitter && <a href={user.twitter} target="_blank" rel="noopener noreferrer" className="text-brand-text-muted hover:text-white"><TwitterIcon /></a>}
+                    {user.twitch && <a href={user.twitch} target="_blank" rel="noopener noreferrer" className="text-brand-text-muted hover:text-white"><TwitchIcon /></a>}
+                    {user.youtube && <a href={user.youtube} target="_blank" rel="noopener noreferrer" className="text-brand-text-muted hover:text-white"><YouTubeIcon /></a>}
+                </div>
+            )}
+            {canMessageUser && (
+                <button onClick={handleMessageClick} className="bg-brand-interactive hover:bg-green-500 text-black font-bold py-2 px-4 rounded-lg transition-transform hover:scale-105 text-sm flex items-center gap-2">
+                    <MessageIcon /> Message
+                </button>
+            )}
+        </div>
+    );
 
     return (
         <>
@@ -102,9 +119,7 @@ export const UserProfilePage: React.FC = () => {
                                                 <h1 className="text-2xl sm:text-4xl font-bold text-white break-words"><ShimmeringGamertag user={user} /></h1>
                                                 <p className="text-sm text-brand-text-muted mt-1 break-words">{canViewAll ? user.email : '[Email Hidden]'}</p>
                                             </div>
-                                            <div className="flex items-center gap-4">
-                                                 {/* Socials & Message Button */}
-                                            </div>
+                                            {socialLinksBlock}
                                         </div>
                                     </div>
                                 </div>
@@ -121,7 +136,7 @@ export const UserProfilePage: React.FC = () => {
                                             <h1 className="text-3xl sm:text-4xl font-bold text-white break-words"><ShimmeringGamertag user={user} /></h1>
                                             <p className="text-sm text-brand-text-muted mt-1 break-words">{canViewAll ? user.email : '[Email Hidden]'}</p>
                                              <div className="mt-4 flex items-center justify-center sm:justify-start gap-4">
-                                                {/* Socials & Message Button */}
+                                                {socialLinksBlock}
                                             </div>
                                         </div>
                                     </div>

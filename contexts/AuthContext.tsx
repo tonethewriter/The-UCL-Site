@@ -27,7 +27,6 @@ const defaultNotificationSettings: NotificationSettings = {
 const defaultVisibilitySettings: ProfileVisibility = {
     showTeam: true,
     showSocials: true,
-
     showPoints: true,
     showPinnedPost: true,
 };

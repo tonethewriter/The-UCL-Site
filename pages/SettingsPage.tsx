@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { NotificationSettings } from '../types';
+import { NotificationSettings, ProfileVisibility } from '../types';
 import { Navigate } from 'react-router-dom';
 
 interface SettingsToggleProps {
@@ -41,13 +41,21 @@ const SettingsToggle: React.FC<SettingsToggleProps> = ({ label, description, isC
 };
 
 export const SettingsPage: React.FC = () => {
-    const { currentUser, updateNotificationSettings } = useAuth();
+    const { currentUser, updateNotificationSettings, updateProfileVisibility } = useAuth();
     const [settings, setSettings] = useState<NotificationSettings | null>(currentUser?.notificationSettings || null);
     const [recentlySaved, setRecentlySaved] = useState<string | null>(null);
+    const [visibility, setVisibility] = useState<ProfileVisibility>(
+        currentUser?.profileVisibility || { showTeam: true, showSocials: true, showPoints: true, showPinnedPost: true }
+    );
+    const [recentlySavedVisibility, setRecentlySavedVisibility] = useState<string | null>(null);
+
 
     useEffect(() => {
         if(currentUser?.notificationSettings) {
             setSettings(currentUser.notificationSettings);
+        }
+        if(currentUser?.profileVisibility) {
+            setVisibility(currentUser.profileVisibility);
         }
     }, [currentUser]);
 
@@ -71,6 +79,16 @@ export const SettingsPage: React.FC = () => {
         setRecentlySaved(savedKey);
         setTimeout(() => setRecentlySaved(null), 1500);
     };
+
+    const handleVisibilityChange = (key: keyof ProfileVisibility, value: boolean) => {
+        const newVisibility = { ...visibility, [key]: value };
+        setVisibility(newVisibility);
+        updateProfileVisibility(newVisibility);
+        
+        setRecentlySavedVisibility(key);
+        setTimeout(() => setRecentlySavedVisibility(null), 1500);
+    };
+
 
     return (
         <div className="max-w-3xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
@@ -127,6 +145,41 @@ export const SettingsPage: React.FC = () => {
                         isChecked={settings.email.quest_complete}
                         onChange={(val) => handleSettingChange('email', 'quest_complete', val)}
                         showSaved={recentlySaved === 'email-quest_complete'}
+                    />
+                </div>
+            </div>
+
+            <div className="bg-brand-surface p-6 sm:p-8 rounded-xl shadow-lg border border-brand-border/50 mt-8">
+                <h2 className="text-2xl font-semibold text-white border-b border-brand-border/50 pb-4">Profile Visibility</h2>
+                <p className="text-sm text-brand-text-muted my-4">Choose what information is visible to others on your public profile page.</p>
+                <div className="divide-y divide-brand-border/50">
+                    <SettingsToggle 
+                        label="Show My Team"
+                        description="Display your current team affiliation."
+                        isChecked={visibility.showTeam}
+                        onChange={(val) => handleVisibilityChange('showTeam', val)}
+                        showSaved={recentlySavedVisibility === 'showTeam'}
+                    />
+                     <SettingsToggle 
+                        label="Show Social Links"
+                        description="Display your Twitter, Twitch, and YouTube links."
+                        isChecked={visibility.showSocials}
+                        onChange={(val) => handleVisibilityChange('showSocials', val)}
+                        showSaved={recentlySavedVisibility === 'showSocials'}
+                    />
+                    <SettingsToggle 
+                        label="Show UCL Points"
+                        description="Display your total UCL points."
+                        isChecked={visibility.showPoints}
+                        onChange={(val) => handleVisibilityChange('showPoints', val)}
+                        showSaved={recentlySavedVisibility === 'showPoints'}
+                    />
+                    <SettingsToggle 
+                        label="Show Pinned Post"
+                        description="Display your pinned post at the top of your profile."
+                        isChecked={visibility.showPinnedPost}
+                        onChange={(val) => handleVisibilityChange('showPinnedPost', val)}
+                        showSaved={recentlySavedVisibility === 'showPinnedPost'}
                     />
                 </div>
             </div>
