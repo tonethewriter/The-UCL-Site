@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import { User, Post, Quest, UserRole, Comment, Message, Notification, NotificationType, NotificationSettings, Team, Invite, Application, InviteStatus, ActivityLog, ActivityLogEntity } from '../types';
+import { User, Post, Quest, UserRole, Comment, Message, Notification, NotificationType, NotificationSettings, Team, Invite, Application, InviteStatus, ActivityLog, ActivityLogEntity, CustomEmoji, ProfileVisibility } from '../types';
 
 // --- Mock Data (acts as our in-memory database) ---
 const defaultNotificationSettings: NotificationSettings = {
@@ -20,23 +20,30 @@ const defaultNotificationSettings: NotificationSettings = {
     }
 };
 
+const defaultVisibilitySettings: ProfileVisibility = {
+    showTeam: true,
+    showSocials: true,
+    showPoints: true,
+    showPinnedPost: true,
+};
+
 const initialUsers: User[] = [
   // Old users
-  { id: '1', gamertag: 'Admin', email: 'admin@ucl.com', pin: '1234', role: 'admin', uclPoints: 1500, profilePicture: 'https://i.pravatar.cc/150?u=Admin', notificationSettings: defaultNotificationSettings, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString() },
-  { id: '4', gamertag: 'Viper', email: 'viper@ucl.com', pin: '1234', role: 'team_owner_plus', teamId: 't2', uclPoints: 1100, profilePicture: 'https://i.pravatar.cc/150?u=4', notificationSettings: defaultNotificationSettings, twitter: 'https://twitter.com/example', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10).toISOString() },
-  { id: '6', gamertag: 'CoOwner', email: 'coowner@ucl.com', pin: '1234', role: 'co_owner', teamId: 't2', uclPoints: 900, profilePicture: 'https://i.pravatar.cc/150?u=6', notificationSettings: defaultNotificationSettings, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString() },
-  { id: '7', gamertag: 'Shadow', email: 'shadow@ucl.com', pin: '1234', role: 'team_owner', teamId: 't1', uclPoints: 1000, profilePicture: 'https://i.pravatar.cc/150?u=7', notificationSettings: defaultNotificationSettings, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 15).toISOString() },
+  { id: '1', gamertag: 'Admin', email: 'admin@ucl.com', pin: '1234', role: 'admin', uclPoints: 1500, profilePicture: 'https://i.pravatar.cc/150?u=Admin', profileBanner: 'https://placehold.co/1200x400/166534/4ade80?text=Admin+HQ', notificationSettings: defaultNotificationSettings, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString(), profileVisibility: defaultVisibilitySettings },
+  { id: '4', gamertag: 'Viper', email: 'viper@ucl.com', pin: '1234', role: 'team_owner_plus', teamId: 't2', uclPoints: 1100, profilePicture: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZnejRzZTNkcnNmMjB4N2ZtN2Y0cHJqZm5tYW51NWYzcGZseG8zayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/f4V2mqb6YE50I/giphy.gif', profileBanner: 'https://placehold.co/1200x400/8b5cf6/ffffff?text=Viper', pinnedPostId: 'p3', notificationSettings: defaultNotificationSettings, twitter: 'https://twitter.com/example', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10).toISOString(), profileVisibility: defaultVisibilitySettings },
+  { id: '6', gamertag: 'CoOwner', email: 'coowner@ucl.com', pin: '1234', role: 'co_owner', teamId: 't2', uclPoints: 900, profilePicture: 'https://i.pravatar.cc/150?u=6', notificationSettings: defaultNotificationSettings, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(), profileVisibility: defaultVisibilitySettings },
+  { id: '7', gamertag: 'Shadow', email: 'shadow@ucl.com', pin: '1234', role: 'team_owner', teamId: 't1', uclPoints: 1000, profilePicture: 'https://i.pravatar.cc/150?u=7', notificationSettings: defaultNotificationSettings, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 15).toISOString(), profileVisibility: defaultVisibilitySettings },
   
   // Recent users (within 48 hours)
-  { id: '2', gamertag: 'Sniper', email: 'sniper@ucl.com', pin: '1234', role: 'player_plus', teamId: 't1', uclPoints: 850, profilePicture: 'https://i.pravatar.cc/150?u=2', notificationSettings: defaultNotificationSettings, twitch: 'https://www.twitch.tv/example', youtube: 'https://www.youtube.com/example', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString() },
-  { id: '3', gamertag: 'Ghost', email: 'ghost@ucl.com', pin: '1234', role: 'player', teamId: 't1', uclPoints: 320, profilePicture: 'https://i.pravatar.cc/150?u=3', notificationSettings: defaultNotificationSettings, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() },
-  { id: '5', gamertag: 'Rogue', email: 'rogue@ucl.com', pin: '1234', role: 'player', uclPoints: 450, profilePicture: 'https://i.pravatar.cc/150?u=5', isFreeAgent: true, notificationSettings: defaultNotificationSettings, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 40).toISOString() },
-  { id: '8', gamertag: 'Blade', email: 'blade@ucl.com', pin: '1234', role: 'player', uclPoints: 200, profilePicture: 'https://i.pravatar.cc/150?u=8', isFreeAgent: true, notificationSettings: defaultNotificationSettings, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 60).toISOString() }, // > 48h
+  { id: '2', gamertag: 'Sniper', email: 'sniper@ucl.com', pin: '1234', role: 'player_plus', teamId: 't1', uclPoints: 850, profilePicture: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdzg1cjN1eDFwbWE5bGl6cjJ0YjU4NHo5M2V0ZGN0YmY5eGh0ZTM1dSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/lv6K2844D2k2Q/giphy.gif', profileBanner: 'https://placehold.co/1200x400/3b82f6/ffffff?text=Sniper', notificationSettings: defaultNotificationSettings, twitch: 'https://www.twitch.tv/example', youtube: 'https://www.youtube.com/example', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(), profileVisibility: defaultVisibilitySettings },
+  { id: '3', gamertag: 'Ghost', email: 'ghost@ucl.com', pin: '1234', role: 'player', teamId: 't1', uclPoints: 320, profilePicture: 'https://i.pravatar.cc/150?u=3', notificationSettings: defaultNotificationSettings, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), profileVisibility: defaultVisibilitySettings },
+  { id: '5', gamertag: 'Rogue', email: 'rogue@ucl.com', pin: '1234', role: 'player', uclPoints: 450, profilePicture: 'https://i.pravatar.cc/150?u=5', isFreeAgent: true, notificationSettings: defaultNotificationSettings, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 40).toISOString(), profileVisibility: defaultVisibilitySettings },
+  { id: '8', gamertag: 'Blade', email: 'blade@ucl.com', pin: '1234', role: 'player', uclPoints: 200, profilePicture: 'https://i.pravatar.cc/150?u=8', isFreeAgent: true, notificationSettings: defaultNotificationSettings, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 60).toISOString(), profileVisibility: defaultVisibilitySettings }, // > 48h
 ];
 
 const initialTeams: Team[] = [
     { id: 't1', name: 'Alpha Squad', logoUrl: 'https://placehold.co/200x200/4ade80/000000?text=AS', ownerId: '7', description: 'Alpha Squad is the premier competitive team in the UCL, known for their aggressive playstyle and strategic dominance.' },
-    { id: 't2', name: 'Bravo Company', logoUrl: 'https://placehold.co/200x200/f87171/000000?text=BC', ownerId: '4', description: 'Bravo Company values teamwork and communication above all else. A friendly and welcoming environment for dedicated players.' },
+    { id: 't2', name: 'Bravo Company', logoUrl: 'https://placehold.co/200x200/f87171/000000?text=BC', bannerUrl: 'https://placehold.co/1200x300/f87171/000000?text=Bravo+Company', ownerId: '4', description: 'Bravo Company values teamwork and communication above all else. A friendly and welcoming environment for dedicated players.' },
     { id: 't3', name: 'Crimson Guard', logoUrl: 'https://placehold.co/200x200/9333ea/000000?text=CG', ownerId: '1', description: 'The elite forces of the UCL, hand-picked by the admins.' },
 ];
 
@@ -48,14 +55,20 @@ const initialApplications: Application[] = [
     { id: 'app1', teamId: 't1', userId: '8', status: 'pending' },
 ];
 
+const initialCustomEmojis: CustomEmoji[] = [
+    { id: 'ce1', name: ':bc_logo:', imageUrl: 'https://placehold.co/40x40/f87171/000000?text=BC', uploaderId: '4' },
+    { id: 'ce2', name: ':pog:', imageUrl: 'https://cdn.frankerfacez.com/emoticon/210748/1', uploaderId: '4' },
+];
+
 const initialPosts: Post[] = [
   {
     id: 'p1',
     authorId: '2',
     authorGamertag: 'Sniper',
     content: 'Just hit a sick 360 no-scope in the last match! Clip coming soon. Hey @Admin, check this out! #UCL #Gaming',
+    imageUrl: 'https://placehold.co/600x400/3b82f6/ffffff?text=Amazing+Clip!',
     timestamp: new Date(Date.now() - 3600 * 1000 * 2).toISOString(),
-    reactions: [{ emoji: '🔥', users: ['1', '4'] }, { emoji: '😮', users: ['3'] }],
+    reactions: [{ emoji: '🔥', users: ['1', '4'] }, { emoji: '😮', users: ['3'] }, { emoji: 'ce2', users: ['7'] }],
     comments: [
         { id: 'c1', authorId: '4', authorGamertag: 'Viper', content: 'Can\'t wait to see it @Sniper!', timestamp: new Date(Date.now() - 3600 * 1000 * 1.5).toISOString() }
     ],
@@ -70,8 +83,28 @@ const initialPosts: Post[] = [
     reactions: [{ emoji: '👍', users: ['2', '3', '4'] }],
     comments: [],
   },
+   {
+    id: 'p3',
+    authorId: '4',
+    authorGamertag: 'Viper',
+    content: 'Bravo Company is recruiting! We are looking for dedicated players who value teamwork. Apply on our team page!',
+    timestamp: new Date(Date.now() - 3600 * 1000 * 8).toISOString(),
+    reactions: [{ emoji: '👍', users: ['5', '8'] }, { emoji: 'ce1', users:['6'] }],
+    comments: [],
+  },
+  // Private team post
+  {
+    id: 'pt1',
+    authorId: '4',
+    authorGamertag: 'Viper',
+    content: 'Team meeting this Friday at 8 PM EST to go over the new strats. Please confirm your attendance.',
+    privateTeamId: 't2',
+    timestamp: new Date(Date.now() - 3600 * 1000 * 4).toISOString(),
+    reactions: [{ emoji: '👍', users: ['6'] }],
+    comments: [],
+  },
   ...Array.from({ length: 50 }, (_, i) => ({
-    id: `p${i + 3}`,
+    id: `p${i + 4}`,
     authorId: String((i % 5) + 2),
     authorGamertag: initialUsers.find(u => u.id === String((i % 5) + 2))?.gamertag || 'User',
     content: `This is dummy post number ${i + 3} to demonstrate infinite scrolling. Hope you enjoy the seamless experience!`,
@@ -122,11 +155,12 @@ export interface AuthContextType {
   invites: Invite[];
   applications: Application[];
   activityLog: ActivityLog[];
+  customEmojis: CustomEmoji[];
   reactionPointReward: number;
   login: (identifier: string, pin: string) => Promise<void>;
   logout: () => void;
   signUp: (gamertag: string, email: string, pin:string, role: UserRole, teamName?: string) => Promise<void>;
-  addPost: (content: string) => void;
+  addPost: (content: string, imageUrl?: string, privateTeamId?: string) => void;
   toggleReaction: (postId: string, emoji: string) => void;
   addComment: (postId: string, content: string) => void;
   claimQuestReward: (questId: string) => Promise<void>;
@@ -153,6 +187,12 @@ export interface AuthContextType {
   editTeamDetails: (teamId: string, details: { name: string; description: string; logoUrl: string; }) => Promise<void>;
   transferTeamOwnership: (teamId: string, newOwnerId: string) => Promise<void>;
   disbandTeam: (teamId: string) => Promise<void>;
+  pinPost: (postId: string | null) => Promise<void>;
+  updateProfileBanner: (bannerUrl: string) => Promise<void>;
+  updateTeamBanner: (teamId: string, bannerUrl: string) => Promise<void>;
+  addCustomEmoji: (name: string, imageUrl: string) => Promise<void>;
+  deleteCustomEmoji: (emojiId: string) => Promise<void>;
+  updateProfileVisibility: (settings: ProfileVisibility) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -181,6 +221,7 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
   const [invites, setInvites] = useState<Invite[]>(initialInvites);
   const [applications, setApplications] = useState<Application[]>(initialApplications);
   const [activityLog, setActivityLog] = useState<ActivityLog[]>(initialActivityLog);
+  const [customEmojis, setCustomEmojis] = useState<CustomEmoji[]>(initialCustomEmojis);
   
   const reactionPointReward = 5;
 
@@ -270,6 +311,7 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
         uclPoints: 0,
         profilePicture: `https://i.pravatar.cc/150?u=${gamertag}`,
         notificationSettings: defaultNotificationSettings,
+        profileVisibility: defaultVisibilitySettings,
         createdAt: new Date().toISOString(),
     };
 
@@ -295,19 +337,24 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
     createActivityLog([{ type: 'user', id: newUser.id, text: gamertag }, { type: 'text', text: ' has registered as a new user.' }]);
   };
 
-  const addPost = (content: string) => {
+  const addPost = (content: string, imageUrl?: string, privateTeamId?: string) => {
     if (!currentUser) return;
     const newPost: Post = {
       id: `p${Date.now()}`,
       authorId: currentUser.id,
       authorGamertag: currentUser.gamertag,
       content,
+      imageUrl: imageUrl,
+      privateTeamId: privateTeamId,
       timestamp: new Date().toISOString(),
       reactions: [],
       comments: [],
     };
     setPosts(prev => [newPost, ...prev]);
-    parseAndNotifyMentions(content, currentUser.id, `/`);
+    // Only parse mentions for public posts
+    if (!privateTeamId) {
+        parseAndNotifyMentions(content, currentUser.id, `/`);
+    }
   };
   
   const toggleReaction = (postId: string, emoji: string) => {
@@ -315,11 +362,11 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
     const post = posts.find(p => p.id === postId);
     if (!post) return;
 
-    if (post.authorId !== currentUser.id) {
+    if (post.authorId !== currentUser.id && !post.privateTeamId) {
         const reaction = post.reactions.find(r => r.emoji === emoji);
         const hasReacted = reaction?.users.includes(currentUser.id);
         if (!hasReacted) {
-             createNotification(post.authorId, 'new_reaction', `${currentUser.gamertag} reacted ${emoji} to your post.`, '/');
+             createNotification(post.authorId, 'new_reaction', `${currentUser.gamertag} reacted to your post.`, '/');
         }
     }
 
@@ -364,12 +411,15 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
           timestamp: new Date().toISOString(),
       };
       
-      if (post.authorId !== currentUser.id) {
+      if (post.authorId !== currentUser.id && !post.privateTeamId) {
           createNotification(post.authorId, 'new_comment', `${currentUser.gamertag} commented on your post: "${content.substring(0, 30)}..."`, '/');
       }
       
       setPosts(posts.map(p => p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p));
-      parseAndNotifyMentions(content, currentUser.id, `/`);
+      
+      if (!post.privateTeamId) {
+        parseAndNotifyMentions(content, currentUser.id, `/`);
+      }
   };
   
   const claimQuestReward = async (questId: string) => {
@@ -658,9 +708,60 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
         setApplications(prev => prev.filter(a => a.teamId !== teamId));
         createActivityLog([{ type: 'text', text: 'Team ' }, { type: 'team', id: teamToDisband.id, text: teamToDisband.name }, { type: 'text', text: ' was disbanded.' }]);
     };
+    
+    // Plus Features
+    const pinPost = async (postId: string | null) => {
+        if (!currentUser) throw new Error("Not logged in.");
+        const updatedUser = { ...currentUser, pinnedPostId: postId || undefined };
+        setCurrentUser(updatedUser);
+        setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
+    };
+
+    const updateProfileBanner = async (bannerUrl: string) => {
+        if (!currentUser) throw new Error("Not logged in.");
+        const updatedUser = { ...currentUser, profileBanner: bannerUrl };
+        setCurrentUser(updatedUser);
+        setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
+    };
+
+    const updateTeamBanner = async (teamId: string, bannerUrl: string) => {
+        if (!currentUser || currentUser.role !== 'team_owner_plus') throw new Error("Insufficient permissions.");
+        setTeams(prev => prev.map(t => t.id === teamId ? { ...t, bannerUrl } : t));
+    };
+    
+    const addCustomEmoji = async (name: string, imageUrl: string) => {
+        if (!currentUser || !(currentUser.role.includes('_plus') || currentUser.role === 'admin')) throw new Error("Only Plus members can add custom emojis.");
+        const userEmojis = customEmojis.filter(e => e.uploaderId === currentUser.id);
+        if (userEmojis.length >= 3) throw new Error("You have reached your custom emoji upload limit (3).");
+        if (!name.match(/^:[a-zA-Z0-9_]+:$/)) throw new Error("Emoji name must be in the format :name_here:");
+        if (customEmojis.some(e => e.name.toLowerCase() === name.toLowerCase())) throw new Error("An emoji with this name already exists.");
+
+        const newEmoji: CustomEmoji = {
+            id: `ce${Date.now()}`,
+            name,
+            imageUrl,
+            uploaderId: currentUser.id,
+        };
+        setCustomEmojis(prev => [...prev, newEmoji]);
+    };
+
+    const deleteCustomEmoji = async (emojiId: string) => {
+        if (!currentUser) throw new Error("Not logged in.");
+        const emoji = customEmojis.find(e => e.id === emojiId);
+        if (!emoji || emoji.uploaderId !== currentUser.id) throw new Error("You can only delete your own emojis.");
+
+        setCustomEmojis(prev => prev.filter(e => e.id !== emojiId));
+    };
+    
+    const updateProfileVisibility = async (settings: ProfileVisibility) => {
+        if (!currentUser) throw new Error("Not logged in.");
+        const updatedUser = { ...currentUser, profileVisibility: settings };
+        setCurrentUser(updatedUser);
+        setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
+    };
 
 
-  const value = { currentUser, users, posts, quests, messages, notifications, teams, invites, applications, activityLog, reactionPointReward, login, logout, signUp, addPost, toggleReaction, addComment, claimQuestReward, updateQuestProgress, sendMessage, leaveTeam, toggleFreeAgentStatus, markNotificationAsRead, markAllNotificationsAsRead, updateNotificationSettings, addQuest, updateQuest, deleteQuest, deleteUser, updateUserRole, deletePost, submitFeedback, adjustUserPoints, updateUserProfile, sendInvite, respondToInvite, applyToTeam, respondToApplication, editTeamDetails, transferTeamOwnership, disbandTeam };
+  const value = { currentUser, users, posts, quests, messages, notifications, teams, invites, applications, activityLog, customEmojis, reactionPointReward, login, logout, signUp, addPost, toggleReaction, addComment, claimQuestReward, updateQuestProgress, sendMessage, leaveTeam, toggleFreeAgentStatus, markNotificationAsRead, markAllNotificationsAsRead, updateNotificationSettings, addQuest, updateQuest, deleteQuest, deleteUser, updateUserRole, deletePost, submitFeedback, adjustUserPoints, updateUserProfile, sendInvite, respondToInvite, applyToTeam, respondToApplication, editTeamDetails, transferTeamOwnership, disbandTeam, pinPost, updateProfileBanner, updateTeamBanner, addCustomEmoji, deleteCustomEmoji, updateProfileVisibility };
 
   return (
     <AuthContext.Provider value={value}>

@@ -17,11 +17,12 @@ export const HomePage: React.FC = () => {
     const [hasMore, setHasMore] = useState(true);
     
     const sortedAndFilteredPosts = useMemo(() => {
-        // 1. Filter posts
-        let filtered = posts;
+        // 1. Filter posts for public only
+        let filtered = posts.filter(p => !p.privateTeamId);
+
         if (searchTerm) {
             const lowercasedFilter = searchTerm.toLowerCase();
-            filtered = posts.filter(post => 
+            filtered = filtered.filter(post => 
                 post.content.toLowerCase().includes(lowercasedFilter) || 
                 post.authorGamertag.toLowerCase().includes(lowercasedFilter)
             );

@@ -7,16 +7,22 @@ import { useAuth } from '../hooks/useAuth';
 import { UCLPointIcon, CommentIcon, TrashIcon, parseMentions, ShimmeringGamertag } from '../constants';
 import { ConfirmationModal } from './ConfirmationModal';
 
-interface PostCardProps {
-  post: Post;
-  author: User | undefined;
-}
+const PinIcon: React.FC<{className?: string}> = ({ className }) => (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    </svg>
+);
 
-export const PostCard: React.FC<PostCardProps> = ({ post, author }) => {
-    const { currentUser, reactionPointReward, addComment, deletePost, users } = useAuth();
+
+export const PostCard: React.FC<{ post: Post; author: User | undefined; }> = ({ post, author }) => {
+    const { currentUser, reactionPointReward, addComment, deletePost, users, pinPost } = useAuth();
     const [isCommentsOpen, setIsCommentsOpen] = useState(false);
     const [newComment, setNewComment] = useState('');
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+    const isAuthor = currentUser?.id === post.authorId;
+    const isPlusMember = currentUser?.role.includes('_plus') || currentUser?.role === 'admin';
+    const isPinned = currentUser?.pinnedPostId === post.id;
 
     const timeAgo = (dateString: string): string => {
         const date = new Date(dateString);
@@ -45,20 +51,36 @@ export const PostCard: React.FC<PostCardProps> = ({ post, author }) => {
     const handleConfirmDelete = () => {
         deletePost(post.id);
         setIsDeleteModalOpen(false);
-    }
+    };
+
+    const handlePinClick = () => {
+        pinPost(isPinned ? null : post.id);
+    };
 
     return (
         <>
             <div className="bg-brand-surface p-5 rounded-lg shadow-lg border border-brand-border/50 relative">
-                {currentUser?.role === 'admin' && (
-                    <button
-                        onClick={() => setIsDeleteModalOpen(true)}
-                        className="absolute top-3 right-3 text-red-500/60 hover:text-red-500 hover:bg-red-500/10 p-1.5 rounded-full transition-colors"
-                        aria-label="Delete post"
-                    >
-                        <TrashIcon className="w-5 h-5" />
-                    </button>
-                )}
+                <div className="absolute top-3 right-3 flex items-center gap-2">
+                     {isAuthor && isPlusMember && (
+                        <button
+                            onClick={handlePinClick}
+                            className={`p-1.5 rounded-full transition-colors ${isPinned ? 'text-brand-accent bg-brand-accent/20' : 'text-brand-text-muted/60 hover:text-brand-accent hover:bg-brand-accent/10'}`}
+                            aria-label={isPinned ? 'Unpin post' : 'Pin post'}
+                            title={isPinned ? 'Unpin from profile' : 'Pin to profile'}
+                        >
+                            <PinIcon className="w-5 h-5" />
+                        </button>
+                    )}
+                    {currentUser?.role === 'admin' && (
+                        <button
+                            onClick={() => setIsDeleteModalOpen(true)}
+                            className="text-red-500/60 hover:text-red-500 hover:bg-red-500/10 p-1.5 rounded-full transition-colors"
+                            aria-label="Delete post"
+                        >
+                            <TrashIcon className="w-5 h-5" />
+                        </button>
+                    )}
+                </div>
                 <div className="flex items-center mb-3">
                     {author?.profilePicture ? (
                         <img src={author.profilePicture} alt={post.authorGamertag} className="w-10 h-10 rounded-full bg-brand-border object-cover mr-3" />
@@ -79,6 +101,12 @@ export const PostCard: React.FC<PostCardProps> = ({ post, author }) => {
                     </div>
                 </div>
                 <p className="text-brand-text whitespace-pre-wrap my-4">{parseMentions(post.content, users)}</p>
+                
+                {post.imageUrl && (
+                    <div className="my-4 rounded-lg overflow-hidden border border-brand-border/50">
+                        <img src={post.imageUrl} alt="Post attachment" className="w-full h-auto object-cover" />
+                    </div>
+                )}
                 
                 {post.pointsAwarded && (
                     <div className="mb-4 text-xs font-bold text-brand-accent bg-brand-accent/10 px-2.5 py-1 rounded-full inline-flex items-center gap-1.5">

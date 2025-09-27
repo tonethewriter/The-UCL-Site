@@ -18,6 +18,13 @@ export interface NotificationSettings {
   };
 }
 
+export interface ProfileVisibility {
+  showTeam: boolean;
+  showSocials: boolean;
+  showPoints: boolean;
+  showPinnedPost: boolean;
+}
+
 
 export interface User {
   id: string;
@@ -29,11 +36,14 @@ export interface User {
   createdAt: string;
   teamId?: string;
   profilePicture?: string;
+  profileBanner?: string;
+  pinnedPostId?: string;
   uclPoints: number;
   isFreeAgent?: boolean;
   twitter?: string;
   twitch?: string;
   youtube?: string;
+  profileVisibility?: ProfileVisibility;
 }
 
 export interface Reaction {
@@ -54,10 +64,12 @@ export interface Post {
   authorId: string;
   authorGamertag: string;
   content: string;
+  imageUrl?: string;
   timestamp: string;
   reactions: Reaction[];
   comments: Comment[];
   pointsAwarded?: boolean;
+  privateTeamId?: string; // If present, post is private to this team
 }
 
 export type QuestStatus = 'incomplete' | 'started' | 'completed';
@@ -98,6 +110,7 @@ export interface Team {
     id: string;
     name: string;
     logoUrl: string;
+    bannerUrl?: string;
     ownerId: string;
     description: string;
 }
@@ -127,4 +140,11 @@ export interface ActivityLog {
   id: string;
   timestamp: string;
   entities: ActivityLogEntity[];
+}
+
+export interface CustomEmoji {
+  id: string;
+  name: string; // e.g., ':squad_logo:'
+  imageUrl: string;
+  uploaderId: string;
 }
