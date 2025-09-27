@@ -14,6 +14,7 @@ const ALL_ROLES: { id: UserRole; label: string }[] = [
     { id: 'team_owner', label: 'Team Owner' },
     { id: 'team_owner_plus', label: 'Team Owner Plus' },
     { id: 'co_owner', label: 'Co-Owner' },
+    { id: 'moderator', label: 'Moderator' },
     { id: 'admin', label: 'Admin' },
 ];
 

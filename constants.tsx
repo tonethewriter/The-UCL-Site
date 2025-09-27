@@ -7,11 +7,61 @@ export const AVAILABLE_REACTIONS = ['👍', '❤️', '😂', '🔥', '😮', '�
 // Utility function to read a file and convert it to a Base64 data URL
 export const fileToBase64 = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
+    // For animated GIFs, we don't want to compress via canvas as it will kill the animation.
+    // We will just read it directly. This might still fail for very large GIFs due to localStorage limits,
+    // but it's the best approach for a client-side only solution.
+    if (file.type === 'image/gif') {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (error) => reject(error);
+        return;
+    }
+
+    // For other images, we resize and compress to save space.
     const reader = new FileReader();
     reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
+    reader.onload = (event) => {
+      const img = new Image();
+      if (!event.target?.result) {
+        return reject(new Error("FileReader event target is null"));
+      }
+      img.src = event.target.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxSize = 1280; // Max width/height
+        let { width, height } = img;
+
+        if (width > height) {
+          if (width > maxSize) {
+            height *= maxSize / width;
+            width = maxSize;
+          }
+        } else {
+          if (height > maxSize) {
+            width *= maxSize / height;
+            height = maxSize;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          return reject(new Error('Could not get canvas context'));
+        }
+        
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Use JPEG for compression, quality 0.8 is a good balance.
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        resolve(dataUrl);
+      };
+      img.onerror = (error) => reject(error);
+    };
     reader.onerror = (error) => reject(error);
   });
+
 
 // Utility function to parse text and convert @mentions to links
 export const parseMentions = (text: string, users: User[]) => {
@@ -62,7 +112,7 @@ export const ShimmeringGamertag: React.FC<{ user: User | undefined; baseClassNam
         );
     }
 
-    return <span className={baseClassName}>{gamertag}</span>;
+    return <span className={baseClassName}>{user.gamertag}</span>;
 };
 
 export const UCLPointIcon: React.FC = () => (
