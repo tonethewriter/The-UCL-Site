@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { User, Quest, UserRole, Team, Post } from '../types';
 import { ConfirmationModal } from '../components/ConfirmationModal';
@@ -156,7 +157,17 @@ export const AdminDashboardPage: React.FC = () => {
                                 <div key={log.id} className="flex items-start gap-3">
                                     <div className="mt-1.5 w-2 h-2 bg-brand-border rounded-full flex-shrink-0"></div>
                                     <div className="flex-1">
-                                        <p className="text-sm text-brand-text">{log.message}</p>
+                                        <p className="text-sm text-brand-text">
+                                            {log.entities.map((entity, index) => {
+                                                if (entity.type === 'user') {
+                                                    return <Link key={index} to={`/users/${entity.id}`} className="font-bold text-brand-accent hover:underline">{entity.text}</Link>;
+                                                }
+                                                if (entity.type === 'team') {
+                                                    return <Link key={index} to={`/teams/${entity.id}`} className="font-bold text-white hover:underline">{entity.text}</Link>;
+                                                }
+                                                return <span key={index}>{entity.text}</span>;
+                                            })}
+                                        </p>
                                         <p className="text-xs text-brand-text-muted">{timeAgo(log.timestamp)}</p>
                                     </div>
                                 </div>

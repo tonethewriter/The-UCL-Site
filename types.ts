@@ -118,8 +118,13 @@ export interface Application {
     status: InviteStatus;
 }
 
+export type ActivityLogEntity = 
+    | { type: 'user'; id: string; text: string; }
+    | { type: 'team'; id: string; text: string; }
+    | { type: 'text'; text: string; };
+
 export interface ActivityLog {
   id: string;
   timestamp: string;
-  message: string;
+  entities: ActivityLogEntity[];
 }

@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import { User, Post, Quest, UserRole, Comment, Message, Notification, NotificationType, NotificationSettings, Team, Invite, Application, InviteStatus, ActivityLog } from '../types';
+import { User, Post, Quest, UserRole, Comment, Message, Notification, NotificationType, NotificationSettings, Team, Invite, Application, InviteStatus, ActivityLog, ActivityLogEntity } from '../types';
 
 // --- Mock Data (acts as our in-memory database) ---
 const defaultNotificationSettings: NotificationSettings = {
@@ -105,10 +105,10 @@ const initialNotifications: Notification[] = [
 ];
 
 const initialActivityLog: ActivityLog[] = [
-    { id: 'al0', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(), message: 'Sniper has registered as a new user.' },
-    { id: 'al1', timestamp: new Date(Date.now() - 3600 * 1000 * 20).toISOString(), message: 'Rogue became a free agent.' },
-    { id: 'al2', timestamp: new Date(Date.now() - 3600 * 1000 * 25).toISOString(), message: 'Blade has registered as a new user.' },
-    { id: 'al3', timestamp: new Date(Date.now() - 3600 * 1000 * 30).toISOString(), message: 'Viper created a new team: Bravo Company.' },
+    { id: 'al0', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(), entities: [{ type: 'user', id: '2', text: 'Sniper' }, { type: 'text', text: ' has registered as a new user.' }] },
+    { id: 'al1', timestamp: new Date(Date.now() - 3600 * 1000 * 20).toISOString(), entities: [{ type: 'user', id: '5', text: 'Rogue' }, { type: 'text', text: ' became a free agent.' }] },
+    { id: 'al2', timestamp: new Date(Date.now() - 3600 * 1000 * 25).toISOString(), entities: [{ type: 'user', id: '8', text: 'Blade' }, { type: 'text', text: ' has registered as a new user.' }] },
+    { id: 'al3', timestamp: new Date(Date.now() - 3600 * 1000 * 30).toISOString(), entities: [{ type: 'user', id: '4', text: 'Viper' }, { type: 'text', text: ' created a new team: ' }, { type: 'team', id: 't2', text: 'Bravo Company' }, { type: 'text', text: '.' }] },
 ];
 
 export interface AuthContextType {
@@ -194,11 +194,11 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
     }
   }, [currentUser]);
   
-  const createActivityLog = (message: string) => {
+  const createActivityLog = (entities: ActivityLogEntity[]) => {
     const newLog: ActivityLog = {
         id: `al${Date.now()}`,
         timestamp: new Date().toISOString(),
-        message,
+        entities,
     };
     setActivityLog(prev => [newLog, ...prev]);
   };
@@ -286,13 +286,13 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
         };
         setTeams(prev => [...prev, newTeam]);
         newUser.teamId = newTeam.id;
-        createActivityLog(`${newUser.gamertag} created a new team: ${teamName}.`);
+        createActivityLog([{ type: 'user', id: newUser.id, text: newUser.gamertag }, { type: 'text', text: ' created a new team: ' }, { type: 'team', id: newTeam.id, text: teamName }, { type: 'text', text: '.' }]);
     }
 
     setUsers(prev => [...prev, newUser]);
     setCurrentUser(newUser);
     createNotification(newUser.id, 'welcome', 'Welcome to the United Clan League! Check out the quests to get started.', '/quests');
-    createActivityLog(`${gamertag} has registered as a new user.`);
+    createActivityLog([{ type: 'user', id: newUser.id, text: gamertag }, { type: 'text', text: ' has registered as a new user.' }]);
   };
 
   const addPost = (content: string) => {
@@ -425,7 +425,7 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
     setCurrentUser(updatedUser);
     setUsers(users.map(u => u.id === currentUser.id ? updatedUser : u));
     if (team) {
-        createActivityLog(`${currentUser.gamertag} left team ${team.name}.`);
+        createActivityLog([{ type: 'user', id: currentUser.id, text: currentUser.gamertag }, { type: 'text', text: ' left team ' }, { type: 'team', id: team.id, text: team.name }, { type: 'text', text: '.' }]);
     }
   };
 
@@ -446,12 +446,12 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
     
     if (isBecomingFreeAgent) {
         if(team) {
-            createActivityLog(`${currentUser.gamertag} left ${team.name} and became a free agent.`);
+            createActivityLog([{ type: 'user', id: currentUser.id, text: currentUser.gamertag }, { type: 'text', text: ` left ` }, { type: 'team', id: team.id, text: team.name }, { type: 'text', text: ' and became a free agent.' }]);
         } else {
-            createActivityLog(`${currentUser.gamertag} is now listed as a free agent.`);
+            createActivityLog([{ type: 'user', id: currentUser.id, text: currentUser.gamertag }, { type: 'text', text: ' is now listed as a free agent.' }]);
         }
     } else {
-        createActivityLog(`${currentUser.gamertag} is no longer listed as a free agent.`);
+        createActivityLog([{ type: 'user', id: currentUser.id, text: currentUser.gamertag }, { type: 'text', text: ' is no longer listed as a free agent.' }]);
     }
   };
 
@@ -588,7 +588,7 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
             setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
             setApplications(prev => prev.filter(app => app.userId !== currentUser.id)); // Remove other applications
             if (team) {
-                createActivityLog(`${currentUser.gamertag} joined ${team.name} by accepting an invite.`);
+                createActivityLog([{ type: 'user', id: currentUser.id, text: currentUser.gamertag }, { type: 'text', text: ' joined ' }, { type: 'team', id: team.id, text: team.name }, { type: 'text', text: ' by accepting an invite.' }]);
             }
         }
     };
@@ -620,7 +620,7 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
             setUsers(prev => prev.map(u => u.id === app.userId ? { ...u, teamId: app.teamId, isFreeAgent: false } : u));
             createNotification(app.userId, 'application_update', `Your application to ${team.name} has been accepted!`, `/teams/${team.id}`);
             if (applicant) {
-                createActivityLog(`${applicant.gamertag} joined ${team.name} after their application was accepted.`);
+                createActivityLog([{ type: 'user', id: applicant.id, text: applicant.gamertag }, { type: 'text', text: ' joined ' }, { type: 'team', id: team.id, text: team.name }, { type: 'text', text: ' after their application was accepted.' }]);
             }
         } else {
             createNotification(app.userId, 'application_update', `Your application to ${team.name} has been declined.`, `/teams`);
@@ -640,7 +640,7 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
         if(!oldOwner || !newOwner) throw new Error("Owner not found");
         
         setTeams(prev => prev.map(t => t.id === teamId ? { ...t, ownerId: newOwnerId } : t));
-        createActivityLog(`Ownership of ${team.name} was transferred from ${oldOwner.gamertag} to ${newOwner.gamertag}.`);
+        createActivityLog([{ type: 'text', text: 'Ownership of ' }, { type: 'team', id: team.id, text: team.name }, { type: 'text', text: ' was transferred from ' }, { type: 'user', id: oldOwner.id, text: oldOwner.gamertag }, { type: 'text', text: ' to ' }, { type: 'user', id: newOwner.id, text: newOwner.gamertag }, { type: 'text', text: '.' }]);
     };
 
     const disbandTeam = async (teamId: string) => {
@@ -656,7 +656,7 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
         }));
         setInvites(prev => prev.filter(i => i.teamId !== teamId));
         setApplications(prev => prev.filter(a => a.teamId !== teamId));
-        createActivityLog(`Team ${teamToDisband.name} was disbanded.`);
+        createActivityLog([{ type: 'text', text: 'Team ' }, { type: 'team', id: teamToDisband.id, text: teamToDisband.name }, { type: 'text', text: ' was disbanded.' }]);
     };
 
 

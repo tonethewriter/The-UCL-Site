@@ -59,7 +59,11 @@ export const UserProfilePage: React.FC = () => {
                         <h1 className="text-4xl font-bold text-white break-words">
                             <ShimmeringGamertag user={user} />
                         </h1>
-                        <p className="text-brand-text-muted mt-1 break-words">{user.email}</p>
+                        {currentUser?.role === 'admin' ? (
+                            <p className="text-brand-text-muted mt-1 break-words">{user.email}</p>
+                        ) : (
+                             <p className="text-brand-text-muted mt-1 break-words italic">[Email Hidden for Privacy]</p>
+                        )}
                         
                         <div className="mt-4 flex items-center justify-center md:justify-start space-x-4">
                             {user.twitter && (
