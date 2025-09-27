@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { User, Quest, UserRole, Team, Post } from '../types';
+import { User, Quest, UserRole, Team, Post, ActivityLog } from '../types';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { QuestEditorModal } from '../components/QuestEditorModal';
 import { RoleEditorModal } from '../components/RoleEditorModal';
@@ -9,7 +9,8 @@ import { PointsEditorModal } from '../components/PointsEditorModal';
 import { TeamEditorModal } from '../components/TeamEditorModal';
 import { OwnerTransferModal } from '../components/OwnerTransferModal';
 import { MassCommunicationModal } from '../components/MassEmailModal';
-import { PencilIcon, TrashIcon, CoinIcon, SwitchHorizontalIcon, UserGroupIcon, EnvelopeIcon } from '../constants';
+import { TimeoutUserModal } from '../components/TimeoutUserModal';
+import { PencilIcon, TrashIcon, CoinIcon, SwitchHorizontalIcon, UserGroupIcon, EnvelopeIcon, ShieldCheckIcon, ClockIcon } from '../constants';
 
 const StatCard: React.FC<{ title: string; value: string | number; linkTo?: string }> = ({ title, value, linkTo }) => {
     const content = (
@@ -25,11 +26,19 @@ const StatCard: React.FC<{ title: string; value: string | number; linkTo?: strin
     return content;
 };
 
-const UserRow: React.FC<{ user: User; onEditRole: (user: User) => void; onDeleteUser: (userId: string) => void; onEditPoints: (user: User) => void; isCurrentUser: boolean; }> = ({ user, onEditRole, onDeleteUser, onEditPoints, isCurrentUser }) => (
+const UserRow: React.FC<{ 
+    user: User; 
+    onEditRole: (user: User) => void; 
+    onDeleteUser: (userId: string) => void; 
+    onEditPoints: (user: User) => void; 
+    isCurrentUser: boolean;
+    onToggleModerator: (userId: string) => void;
+    onTimeoutUser: (user: User) => void;
+}> = ({ user, onEditRole, onDeleteUser, onEditPoints, isCurrentUser, onToggleModerator, onTimeoutUser }) => (
     <tr className="border-b border-brand-border hover:bg-brand-surface/40">
         <td className="p-4 whitespace-nowrap text-sm font-medium text-white">{user.gamertag}</td>
         <td className="p-4 whitespace-nowrap text-sm text-brand-text-muted">{user.email}</td>
-        <td className="p-4 whitespace-nowrap text-sm text-brand-text-muted capitalize">{user.role.replace(/_/g, ' ')}</td>
+        <td className="p-4 whitespace-nowrap text-sm text-brand-text-muted capitalize">{user.role.replace(/_/g, ' ')}{user.isModerator && <span className="text-blue-400 font-bold"> (Mod)</span>}</td>
         <td className="p-4 whitespace-nowrap text-sm text-brand-accent">{user.uclPoints.toLocaleString()}</td>
         <td className="p-4 whitespace-nowrap text-sm text-right space-x-2">
             <button onClick={() => onEditPoints(user)} className="text-yellow-400 hover:text-yellow-300 p-1 rounded-md hover:bg-yellow-500/20 transition-colors" aria-label={`Edit points for ${user.gamertag}`}>
@@ -42,6 +51,28 @@ const UserRow: React.FC<{ user: User; onEditRole: (user: User) => void; onDelete
                  <button onClick={() => onDeleteUser(user.id)} className="text-red-400 hover:text-red-300 p-1 rounded-md hover:bg-red-500/20 transition-colors" aria-label={`Delete user ${user.gamertag}`}>
                     <TrashIcon />
                 </button>
+            )}
+        </td>
+         <td className="p-4 whitespace-nowrap text-sm text-right space-x-2">
+            {!isCurrentUser && user.role !== 'admin' && (
+                <>
+                    <button 
+                        onClick={() => onToggleModerator(user.id)} 
+                        className={`p-1 rounded-md transition-colors ${user.isModerator ? 'text-blue-400 hover:text-blue-300 bg-blue-500/20' : 'text-gray-400 hover:text-gray-200 hover:bg-gray-500/10'}`}
+                        aria-label={user.isModerator ? 'Revoke Moderator' : 'Grant Moderator'}
+                        title={user.isModerator ? 'Revoke Moderator' : 'Grant Moderator'}
+                    >
+                        <ShieldCheckIcon />
+                    </button>
+                    <button 
+                        onClick={() => onTimeoutUser(user)}
+                        className="text-yellow-400 hover:text-yellow-300 p-1 rounded-md hover:bg-yellow-500/20 transition-colors"
+                        aria-label={`Timeout user ${user.gamertag}`}
+                        title="Timeout User"
+                    >
+                        <ClockIcon />
+                    </button>
+                </>
             )}
         </td>
     </tr>
@@ -64,7 +95,7 @@ const timeAgo = (dateString: string): string => {
 };
 
 export const AdminDashboardPage: React.FC = () => {
-    const { currentUser, users, posts, quests, teams, activityLog, feedback, addQuest, updateQuest, deleteQuest, updateUserRole, deleteUser, deletePost, adjustUserPoints, editTeamDetails, transferTeamOwnership, disbandTeam, toggleModeratorStatus, sendMassCommunication } = useAuth();
+    const { currentUser, users, posts, quests, teams, activityLog, feedback, addQuest, updateQuest, deleteQuest, updateUserRole, deleteUser, deletePost, adjustUserPoints, editTeamDetails, transferTeamOwnership, disbandTeam, toggleModeratorStatus, sendMassCommunication, timeoutUser } = useAuth();
     
     // Quest state
     const [isQuestModalOpen, setIsQuestModalOpen] = useState(false);
@@ -92,6 +123,10 @@ export const AdminDashboardPage: React.FC = () => {
     
     // Communication state
     const [isMassCommunicationModalOpen, setIsMassCommunicationModalOpen] = useState(false);
+
+    // Moderation State
+    const [isTimeoutModalOpen, setIsTimeoutModalOpen] = useState(false);
+    const [timingOutUser, setTimingOutUser] = useState<User | null>(null);
 
     // Quest handlers
     const handleOpenCreateQuestModal = () => { setEditingQuest(null); setIsQuestModalOpen(true); };
@@ -150,8 +185,27 @@ export const AdminDashboardPage: React.FC = () => {
         await sendMassCommunication(subject, message);
     };
 
+    // Moderation handlers
+    const handleOpenTimeoutModal = (user: User) => { setTimingOutUser(user); setIsTimeoutModalOpen(true); };
+    const handleConfirmTimeout = async (durationHours: number) => {
+        if (timingOutUser) { await timeoutUser(timingOutUser.id, durationHours); }
+        setIsTimeoutModalOpen(false);
+    };
+
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const recentUsers = users.filter(user => new Date(user.createdAt) > sevenDaysAgo).sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    const moderationKeywords = [
+        'deleted a post', 'deleted all public posts', 'deleted a comment',
+        'timed out', 'granted moderator status', 'revoked moderator status',
+        'changed the role of', 'disbanded', 'was transferred from'
+    ];
+    
+    const moderationLog = activityLog.filter(log => 
+        log.entities.some(entity => 
+            entity.type === 'text' && moderationKeywords.some(keyword => entity.text.includes(keyword))
+        )
+    );
 
     return (
         <>
@@ -210,6 +264,26 @@ export const AdminDashboardPage: React.FC = () => {
                 </div>
 
                 <div className="space-y-8">
+                     <div className="bg-brand-surface p-6 rounded-lg shadow-lg border border-brand-border/30">
+                        <h2 className="text-2xl font-semibold text-white mb-4">Moderation Log</h2>
+                        <div className="max-h-96 overflow-y-auto pr-2 space-y-4">
+                            {moderationLog.length > 0 ? moderationLog.map((log: ActivityLog) => (
+                                <div key={log.id} className="flex items-start gap-3">
+                                    <div className="mt-1.5 w-2 h-2 bg-yellow-400/50 rounded-full flex-shrink-0"></div>
+                                    <div className="flex-1">
+                                        <p className="text-sm text-brand-text">
+                                            {log.entities.map((entity, index) => {
+                                                if (entity.type === 'user') return <Link key={index} to={`/users/${entity.id}`} className="font-bold text-brand-accent hover:underline">{entity.text}</Link>;
+                                                if (entity.type === 'team') return <Link key={index} to={`/teams/${entity.id}`} className="font-bold text-white hover:underline">{entity.text}</Link>;
+                                                return <span key={index}>{entity.text}</span>;
+                                            })}
+                                        </p>
+                                        <p className="text-xs text-brand-text-muted">{timeAgo(log.timestamp)}</p>
+                                    </div>
+                                </div>
+                            )) : <p className="text-brand-text-muted text-sm text-center">No moderation actions have been recorded yet.</p>}
+                        </div>
+                    </div>
                     <div className="bg-brand-surface p-6 rounded-lg shadow-lg border border-brand-border/30">
                         <h2 className="text-2xl font-semibold text-white mb-4">Communication Tools</h2>
                         <p className="text-sm text-brand-text-muted mb-4">Send a mass message to all team owners, co-owners, moderators, and admins. This is delivered via email and in-site message.</p>
@@ -231,11 +305,23 @@ export const AdminDashboardPage: React.FC = () => {
                                         <th scope="col" className="p-4 text-left text-xs font-medium text-brand-text-muted uppercase tracking-wider">Email</th>
                                         <th scope="col" className="p-4 text-left text-xs font-medium text-brand-text-muted uppercase tracking-wider">Role</th>
                                         <th scope="col" className="p-4 text-left text-xs font-medium text-brand-text-muted uppercase tracking-wider">UCL Points</th>
-                                        <th scope="col" className="p-4 text-right text-xs font-medium text-brand-text-muted uppercase tracking-wider">Actions</th>
+                                        <th scope="col" className="p-4 text-right text-xs font-medium text-brand-text-muted uppercase tracking-wider">User Actions</th>
+                                        <th scope="col" className="p-4 text-right text-xs font-medium text-brand-text-muted uppercase tracking-wider">Moderation Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-brand-surface/50 divide-y divide-brand-border/50">
-                                    {users.sort((a,b) => a.gamertag.localeCompare(b.gamertag)).map(user => <UserRow key={user.id} user={user} onEditRole={handleOpenEditRoleModal} onDeleteUser={openDeleteUserConfirm} onEditPoints={handleOpenPointsModal} isCurrentUser={currentUser?.id === user.id}/>)}
+                                    {users.sort((a,b) => a.gamertag.localeCompare(b.gamertag)).map(user => 
+                                        <UserRow 
+                                            key={user.id} 
+                                            user={user} 
+                                            onEditRole={handleOpenEditRoleModal} 
+                                            onDeleteUser={openDeleteUserConfirm} 
+                                            onEditPoints={handleOpenPointsModal} 
+                                            isCurrentUser={currentUser?.id === user.id}
+                                            onToggleModerator={toggleModeratorStatus}
+                                            onTimeoutUser={handleOpenTimeoutModal}
+                                        />
+                                    )}
                                 </tbody>
                             </table>
                         </div>
@@ -349,6 +435,7 @@ export const AdminDashboardPage: React.FC = () => {
             <OwnerTransferModal isOpen={isOwnerTransferOpen} onClose={() => setIsOwnerTransferOpen(false)} onSave={handleTransferOwner} team={editingTeam} />
             <ConfirmationModal isOpen={isDisbandConfirmOpen} onClose={() => setIsDisbandConfirmOpen(false)} onConfirm={handleConfirmDisband} title="Disband Team" message={`Are you sure you want to disband ${editingTeam?.name}? All members will become free agents. This action is irreversible.`} confirmText="Yes, Disband" />
             <MassCommunicationModal isOpen={isMassCommunicationModalOpen} onClose={() => setIsMassCommunicationModalOpen(false)} onSend={handleSendCommunication} />
+            <TimeoutUserModal isOpen={isTimeoutModalOpen} onClose={() => setIsTimeoutModalOpen(false)} onConfirm={handleConfirmTimeout} user={timingOutUser}/>
         </>
     );
 };

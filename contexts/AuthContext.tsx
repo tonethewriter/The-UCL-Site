@@ -620,10 +620,17 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
 
   const updateUserRole = (userId: string, newRole: UserRole) => {
       const userToUpdate = users.find(u => u.id === userId);
-      if (!userToUpdate) return;
+      if (!userToUpdate || !currentUser) return;
       
       const updatedUser = {...userToUpdate, role: newRole};
       setUsers(prev => prev.map(u => u.id === userId ? updatedUser : u));
+
+      createActivityLog([
+        { type: 'user', id: currentUser.id, text: currentUser.gamertag },
+        { type: 'text', text: ' changed the role of ' },
+        { type: 'user', id: userId, text: userToUpdate.gamertag },
+        { type: 'text', text: ` to ${newRole.replace(/_/g, ' ')}.` }
+    ]);
   };
 
   const deletePost = (postId: string) => {
@@ -888,9 +895,20 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
     };
 
     const toggleModeratorStatus = (userId: string) => {
+        const userToUpdate = users.find(u => u.id === userId);
+        if (!userToUpdate || !currentUser) return;
+
+        const newIsModerator = !userToUpdate.isModerator;
         setUsers(prev => prev.map(u => 
-            u.id === userId ? { ...u, isModerator: !u.isModerator } : u
+            u.id === userId ? { ...u, isModerator: newIsModerator } : u
         ));
+
+        createActivityLog([
+            { type: 'user', id: currentUser.id, text: currentUser.gamertag },
+            { type: 'text', text: newIsModerator ? ' granted moderator status to ' : ' revoked moderator status from ' },
+            { type: 'user', id: userId, text: userToUpdate.gamertag },
+            { type: 'text', text: '.' }
+        ]);
     };
     
     const sendMassCommunication = async (subject: string, message: string) => {
