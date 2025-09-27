@@ -25,7 +25,7 @@ export const EmojiReaction: React.FC<EmojiReactionProps> = ({ post }) => {
                     key={emoji}
                     onClick={() => handleReactionClick(emoji)}
                     className={`px-3 py-1 rounded-full text-sm flex items-center space-x-1 transition-all
-                        ${currentUser && users.includes(currentUser.id) ? 'bg-yellow-500/30 border-yellow-500 text-yellow-300' : 'bg-green-700/50 hover:bg-green-700 border-transparent'}
+                        ${currentUser && users.includes(currentUser.id) ? 'bg-yellow-500/30 border-yellow-500 text-yellow-100' : 'bg-green-700/50 hover:bg-green-700 border-transparent'}
                         border`}
                 >
                     <span>{emoji}</span>
@@ -34,7 +34,7 @@ export const EmojiReaction: React.FC<EmojiReactionProps> = ({ post }) => {
             ))}
             {currentUser && (
                 <div className="relative group">
-                     <button className="bg-green-700/50 hover:bg-green-700 text-yellow-300 px-3 py-1 rounded-full text-sm transition-colors">+</button>
+                     <button className="bg-green-700/50 hover:bg-green-700 text-gray-300 px-3 py-1 rounded-full text-sm transition-colors">+</button>
                      <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-green-800 shadow-lg rounded-full p-1 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
                         {AVAILABLE_REACTIONS.map(emoji => (
                              <button 

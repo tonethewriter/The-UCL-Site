@@ -1,4 +1,4 @@
-export type UserRole = 'player' | 'player_plus' | 'team_owner' | 'team_owner_plus' | 'admin';
+export type UserRole = 'player' | 'player_plus' | 'team_owner' | 'team_owner_plus' | 'co_owner' | 'admin';
 
 export interface User {
   id: string;
@@ -7,6 +7,8 @@ export interface User {
   pin: string; 
   role: UserRole;
   teamName?: string;
+  profilePicture?: string;
+  uclPoints: number;
 }
 
 export interface Reaction {
@@ -21,4 +23,14 @@ export interface Post {
   content: string;
   timestamp: string;
   reactions: Reaction[];
+}
+
+export type QuestStatus = 'incomplete' | 'started' | 'completed';
+
+export interface Quest {
+  id: string;
+  title: string;
+  description: string;
+  status: QuestStatus;
+  prize: string;
 }

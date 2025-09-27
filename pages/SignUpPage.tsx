@@ -5,9 +5,9 @@ import { UserRole } from '../types';
 
 const roleOptions: { id: UserRole; label: string; description: string }[] = [
     { id: 'player', label: 'Player', description: 'Standard player account.' },
-    { id: 'player_plus', label: 'Player Plus', description: 'Enhanced player features.' },
+    { id: 'player_plus', label: 'Player Plus ⭐', description: 'Enhanced player features.' },
     { id: 'team_owner', label: 'Team Owner', description: 'Create and manage a team.' },
-    { id: 'team_owner_plus', label: 'Team Owner Plus', description: 'Enhanced team management.' },
+    { id: 'team_owner_plus', label: 'Team Owner Plus ⭐', description: 'Enhanced team management.' },
 ];
 
 export const SignUpPage: React.FC = () => {
@@ -35,17 +35,17 @@ export const SignUpPage: React.FC = () => {
         }
     };
 
-    const isTeamOwner = role === 'team_owner' || role === 'team_owner_plus';
+    const needsTeamName = role === 'team_owner' || role === 'team_owner_plus' || role === 'co_owner';
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-green-950 py-12 px-4">
             <div className="max-w-md w-full bg-green-900/50 p-8 rounded-xl shadow-2xl border border-yellow-700/50">
-                <h2 className="text-3xl font-bold text-center text-yellow-300 mb-6">Create Account</h2>
+                <h2 className="text-3xl font-bold text-center text-white mb-6">Create Account</h2>
                 {error && <p className="bg-red-500/20 text-red-400 p-3 rounded-md mb-4 text-center">{error}</p>}
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Role Selector */}
                     <div>
-                        <label className="text-sm font-bold text-yellow-500 block mb-3">Account Type</label>
+                        <label className="text-sm font-bold text-gray-300 block mb-3">Account Type</label>
                         <div className="grid grid-cols-2 gap-3">
                             {roleOptions.map(option => (
                                 <div key={option.id}>
@@ -55,7 +55,7 @@ export const SignUpPage: React.FC = () => {
                                         className="sr-only peer"
                                     />
                                     <label htmlFor={option.id} className="block cursor-pointer text-center p-3 rounded-lg border border-green-700 bg-green-800/60 peer-checked:ring-2 peer-checked:ring-yellow-500 peer-checked:border-transparent transition">
-                                        <span className="text-sm font-semibold text-yellow-300">{option.label}</span>
+                                        <span className="text-sm font-semibold text-white">{option.label}</span>
                                     </label>
                                 </div>
                             ))}
@@ -64,29 +64,29 @@ export const SignUpPage: React.FC = () => {
 
                     {/* Form Fields */}
                     <div>
-                        <label className="text-sm font-bold text-yellow-500 block mb-2" htmlFor="gamertag">Gamertag</label>
+                        <label className="text-sm font-bold text-gray-300 block mb-2" htmlFor="gamertag">Gamertag</label>
                         <input type="text" id="gamertag" value={gamertag} onChange={(e) => setGamertag(e.target.value)}
-                            className="w-full bg-green-800/60 text-yellow-200 border border-green-700 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition" required
+                            className="w-full bg-green-800/60 text-white border border-green-700 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition" required
                         />
                     </div>
                      <div>
-                        <label className="text-sm font-bold text-yellow-500 block mb-2" htmlFor="email">Email</label>
+                        <label className="text-sm font-bold text-gray-300 block mb-2" htmlFor="email">Email</label>
                         <input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                            className="w-full bg-green-800/60 text-yellow-200 border border-green-700 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition" required
+                            className="w-full bg-green-800/60 text-white border border-green-700 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition" required
                         />
                     </div>
                      <div>
-                        <label className="text-sm font-bold text-yellow-500 block mb-2" htmlFor="pin">4-Digit PIN</label>
+                        <label className="text-sm font-bold text-gray-300 block mb-2" htmlFor="pin">4-Digit PIN</label>
                         <input type="password" id="pin" value={pin} onChange={(e) => setPin(e.target.value)}
                             pattern="\d{4}" maxLength={4}
-                            className="w-full bg-green-800/60 text-yellow-200 border border-green-700 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition" required
+                            className="w-full bg-green-800/60 text-white border border-green-700 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition" required
                         />
                     </div>
-                     {isTeamOwner && (
+                     {needsTeamName && (
                          <div>
-                             <label className="text-sm font-bold text-yellow-500 block mb-2" htmlFor="teamName">Team Name</label>
+                             <label className="text-sm font-bold text-gray-300 block mb-2" htmlFor="teamName">Team Name</label>
                              <input type="text" id="teamName" value={teamName} onChange={(e) => setTeamName(e.target.value)}
-                                 className="w-full bg-green-800/60 text-yellow-200 border border-green-700 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition" required
+                                 className="w-full bg-green-800/60 text-white border border-green-700 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition" required
                              />
                          </div>
                      )}
@@ -95,8 +95,8 @@ export const SignUpPage: React.FC = () => {
                         Sign Up
                     </button>
                 </form>
-                <p className="text-center text-yellow-500 mt-6">
-                    Already have an account? <Link to="/login" className="font-semibold text-yellow-400 hover:underline">Log In</Link>
+                <p className="text-center text-gray-400 mt-6">
+                    Already have an account? <Link to="/login" className="font-semibold text-yellow-300 hover:underline">Log In</Link>
                 </p>
             </div>
         </div>

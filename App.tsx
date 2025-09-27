@@ -8,6 +8,10 @@ import { LoginPage } from './pages/LoginPage';
 import { SignUpPage } from './pages/SignUpPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { ProfilePage } from './pages/ProfilePage';
+import { AuthenticatedRoute } from './components/AuthenticatedRoute';
+import { UserProfilePage } from './pages/UserProfilePage';
+import { TonesQuestsPage } from './pages/TonesQuestsPage';
 
 const App: React.FC = () => {
     return (
@@ -19,6 +23,16 @@ const App: React.FC = () => {
                         <Route path="/" element={<HomePage />} />
                         <Route path="/login" element={<LoginPage />} />
                         <Route path="/signup" element={<SignUpPage />} />
+                        <Route path="/quests" element={<TonesQuestsPage />} />
+                        <Route path="/users/:userId" element={<UserProfilePage />} />
+                        <Route
+                            path="/profile"
+                            element={
+                                <AuthenticatedRoute>
+                                    <ProfilePage />
+                                </AuthenticatedRoute>
+                            }
+                        />
                         <Route
                             path="/admin"
                             element={

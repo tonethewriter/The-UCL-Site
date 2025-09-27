@@ -1,12 +1,15 @@
 import React from 'react';
-import { Post } from '../types';
+import { Link } from 'react-router-dom';
+import { Post, User } from '../types';
 import { EmojiReaction } from './EmojiReaction';
+import { RoleBadge } from './RoleBadge';
 
 interface PostCardProps {
   post: Post;
+  author: User | undefined;
 }
 
-export const PostCard: React.FC<PostCardProps> = ({ post }) => {
+export const PostCard: React.FC<PostCardProps> = ({ post, author }) => {
     const timeAgo = (dateString: string): string => {
         const date = new Date(dateString);
         const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
@@ -26,15 +29,25 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
     return (
         <div className="bg-green-900/60 p-5 rounded-lg shadow-lg border border-yellow-700/30">
             <div className="flex items-center mb-3">
-                <div className="w-10 h-10 rounded-full bg-yellow-500 flex items-center justify-center font-bold text-green-900 mr-3">
-                    {post.authorGamertag.charAt(0).toUpperCase()}
-                </div>
+                {author?.profilePicture ? (
+                    <img src={author.profilePicture} alt={post.authorGamertag} className="w-10 h-10 rounded-full bg-green-800 object-cover mr-3" />
+                ) : (
+                    <div className="w-10 h-10 rounded-full bg-yellow-500 flex items-center justify-center font-bold text-green-900 mr-3">
+                        {post.authorGamertag.charAt(0).toUpperCase()}
+                    </div>
+                )}
                 <div>
-                    <p className="font-semibold text-yellow-200">{post.authorGamertag}</p>
-                    <p className="text-xs text-yellow-500">{timeAgo(post.timestamp)}</p>
+                    <div className="flex items-center gap-2">
+                         <Link to={`/users/${post.authorId}`} className="font-semibold text-white hover:underline">
+                            {post.authorGamertag}
+                        </Link>
+                        {author && <RoleBadge role={author.role} />}
+                    </div>
+
+                    <p className="text-xs text-gray-400">{timeAgo(post.timestamp)}</p>
                 </div>
             </div>
-            <p className="text-yellow-300 whitespace-pre-wrap">{post.content}</p>
+            <p className="text-gray-100 whitespace-pre-wrap">{post.content}</p>
             <EmojiReaction post={post} />
         </div>
     );
