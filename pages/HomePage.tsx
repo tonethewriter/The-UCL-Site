@@ -3,21 +3,23 @@ import { useAuth } from '../hooks/useAuth';
 import { PostForm } from '../components/PostForm';
 import { PostCard } from '../components/PostCard';
 import { Post } from '../types';
+import { ConfirmationModal } from '../components/ConfirmationModal';
+import { TrashIcon } from '../constants';
 
 const POSTS_PER_PAGE = 10;
 type SortByType = 'newest' | 'oldest' | 'mostReactions';
 
 export const HomePage: React.FC = () => {
-    const { currentUser, posts, users } = useAuth();
+    const { currentUser, posts, users, isWallPostingDisabled, toggleWallPosting, deleteAllPublicPosts } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState<SortByType>('newest');
     const [displayedPosts, setDisplayedPosts] = useState<Post[]>([]);
     const [page, setPage] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
     const [hasMore, setHasMore] = useState(true);
+    const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false);
     
     const sortedAndFilteredPosts = useMemo(() => {
-        // 1. Filter posts for public only
         let filtered = posts.filter(p => !p.privateTeamId);
 
         if (searchTerm) {
@@ -28,7 +30,6 @@ export const HomePage: React.FC = () => {
             );
         }
 
-        // 2. Sort posts
         const sorted = [...filtered].sort((a, b) => {
             switch (sortBy) {
                 case 'oldest':
@@ -39,7 +40,6 @@ export const HomePage: React.FC = () => {
                     if (reactionsB !== reactionsA) {
                         return reactionsB - reactionsA;
                     }
-                    // Fallback to newest if reactions are equal
                     return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
                 case 'newest':
                 default:
@@ -50,7 +50,6 @@ export const HomePage: React.FC = () => {
         return sorted;
     }, [posts, searchTerm, sortBy]);
 
-    // Effect to reset and initialize posts when filter or sort changes
     useEffect(() => {
         setIsLoading(true);
         const newPosts = sortedAndFilteredPosts.slice(0, POSTS_PER_PAGE);
@@ -64,7 +63,6 @@ export const HomePage: React.FC = () => {
         if (isLoading || !hasMore) return;
         
         setIsLoading(true);
-        // Simulate network delay for loading more posts
         setTimeout(() => {
             const nextPage = page + 1;
             const newPosts = sortedAndFilteredPosts.slice(page * POSTS_PER_PAGE, nextPage * POSTS_PER_PAGE);
@@ -73,13 +71,11 @@ export const HomePage: React.FC = () => {
             setPage(nextPage);
             setHasMore(sortedAndFilteredPosts.length > nextPage * POSTS_PER_PAGE);
             setIsLoading(false);
-        }, 1000);
+        }, 500);
     }, [isLoading, hasMore, page, sortedAndFilteredPosts]);
     
-    // Effect for scroll listener
     useEffect(() => {
         const handleScroll = () => {
-            // Check if user is near the bottom
             const isAtBottom = window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 200;
             if (isAtBottom) {
                 loadMorePosts();
@@ -90,9 +86,34 @@ export const HomePage: React.FC = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, [loadMorePosts]);
 
+    const handleConfirmDeleteAll = () => {
+        deleteAllPublicPosts();
+        setIsDeleteAllModalOpen(false);
+    };
+
     return (
+        <>
         <div className="max-w-3xl mx-auto py-6 md:py-8 px-4">
             <h1 className="text-4xl md:text-5xl font-bold text-center mb-4 text-brand-accent tracking-wider">UCL Wall</h1>
+
+            {currentUser?.role === 'admin' && (
+                <div className="bg-red-900/30 border border-red-500/50 p-4 rounded-lg mb-6">
+                    <h3 className="text-lg font-bold text-red-300 mb-3">Admin Controls</h3>
+                    <div className="flex flex-col sm:flex-row gap-4 items-center">
+                        <div className="flex items-center gap-3">
+                            <span className="font-semibold text-white">Wall Posting:</span>
+                            <button onClick={toggleWallPosting} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isWallPostingDisabled ? 'bg-gray-600' : 'bg-brand-interactive'}`}>
+                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isWallPostingDisabled ? 'translate-x-1' : 'translate-x-6'}`} />
+                            </button>
+                             <span className={`font-bold ${isWallPostingDisabled ? 'text-red-400' : 'text-green-400'}`}>{isWallPostingDisabled ? 'Disabled' : 'Enabled'}</span>
+                        </div>
+                        <button onClick={() => setIsDeleteAllModalOpen(true)} className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md transition-colors text-sm">
+                            <TrashIcon />
+                            Delete All Public Posts
+                        </button>
+                    </div>
+                </div>
+            )}
             
             <div className="mb-6 flex flex-col md:flex-row gap-4">
                 <input
@@ -119,7 +140,15 @@ export const HomePage: React.FC = () => {
                 </div>
             </div>
 
-            {currentUser && <PostForm />}
+            {currentUser && (
+                isWallPostingDisabled ? (
+                    <div className="bg-yellow-900/50 border border-yellow-500/50 p-4 rounded-lg text-center mb-8">
+                        <p className="font-bold text-yellow-300">Posting is currently disabled by an administrator.</p>
+                    </div>
+                ) : (
+                    <PostForm />
+                )
+            )}
             
             <div className="space-y-6 mt-8">
                 {displayedPosts.map(post => {
@@ -141,5 +170,14 @@ export const HomePage: React.FC = () => {
                 </div>
             )}
         </div>
+        <ConfirmationModal
+            isOpen={isDeleteAllModalOpen}
+            onClose={() => setIsDeleteAllModalOpen(false)}
+            onConfirm={handleConfirmDeleteAll}
+            title="Delete All Public Posts"
+            message="Are you sure you want to permanently delete all public posts from the wall? This action is irreversible and cannot be undone."
+            confirmText="Yes, Delete Everything"
+        />
+        </>
     );
 };

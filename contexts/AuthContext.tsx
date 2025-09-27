@@ -27,6 +27,7 @@ const defaultNotificationSettings: NotificationSettings = {
 const defaultVisibilitySettings: ProfileVisibility = {
     showTeam: true,
     showSocials: true,
+
     showPoints: true,
     showPinnedPost: true,
 };
@@ -162,6 +163,7 @@ export interface AuthContextType {
   activityLog: ActivityLog[];
   customEmojis: CustomEmoji[];
   reactionPointReward: number;
+  isWallPostingDisabled: boolean;
   login: (identifier: string, pin: string) => Promise<void>;
   logout: () => void;
   signUp: (gamertag: string, email: string, pin:string, role: UserRole, teamName?: string) => Promise<void>;
@@ -182,9 +184,11 @@ export interface AuthContextType {
   deleteUser: (userId: string) => void;
   updateUserRole: (userId: string, newRole: UserRole) => void;
   deletePost: (postId: string) => void;
+  deleteAllPublicPosts: () => void;
   submitFeedback: (type: string, message: string) => Promise<void>;
   adjustUserPoints: (userId: string, amount: number) => void;
   updateUserProfile: (profileData: { gamertag: string; email: string; twitter?: string; twitch?: string; youtube?: string; }) => Promise<void>;
+  updateProfilePicture: (pictureUrl: string) => Promise<void>;
   sendInvite: (teamId: string, userId: string) => Promise<void>;
   respondToInvite: (inviteId: string, response: 'accepted' | 'declined') => Promise<void>;
   applyToTeam: (teamId: string) => Promise<void>;
@@ -200,6 +204,7 @@ export interface AuthContextType {
   updateProfileVisibility: (settings: ProfileVisibility) => Promise<void>;
   timeoutUser: (userId: string, durationHours: number) => Promise<void>;
   deleteComment: (postId: string, commentId: string) => Promise<void>;
+  toggleWallPosting: () => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -243,6 +248,7 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
   const [applications, setApplications] = useState<Application[]>(() => loadFromLocalStorage('ucl_applications', initialApplications));
   const [activityLog, setActivityLog] = useState<ActivityLog[]>(() => loadFromLocalStorage('ucl_activityLog', initialActivityLog));
   const [customEmojis, setCustomEmojis] = useState<CustomEmoji[]>(() => loadFromLocalStorage('ucl_customEmojis', initialCustomEmojis));
+  const [isWallPostingDisabled, setIsWallPostingDisabled] = useState<boolean>(() => loadFromLocalStorage('ucl_wall_posting_disabled', false));
   
   const reactionPointReward = 5;
 
@@ -258,6 +264,7 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
   useEffect(() => { saveToLocalStorage('ucl_applications', applications); }, [applications]);
   useEffect(() => { saveToLocalStorage('ucl_activityLog', activityLog); }, [activityLog]);
   useEffect(() => { saveToLocalStorage('ucl_customEmojis', customEmojis); }, [customEmojis]);
+  useEffect(() => { saveToLocalStorage('ucl_wall_posting_disabled', isWallPostingDisabled); }, [isWallPostingDisabled]);
 
   // This effect synchronizes the currentUser state with the master 'users' list.
   // This is crucial for ensuring the logged-in user's data is always up-to-date
@@ -625,6 +632,14 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
       }
   };
 
+  const deleteAllPublicPosts = () => {
+    setPosts(prev => prev.filter(p => !!p.privateTeamId));
+    createActivityLog([
+        { type: 'user', id: currentUser!.id, text: currentUser!.gamertag },
+        { type: 'text', text: ' deleted all public posts from the wall.' },
+    ]);
+  };
+
   const submitFeedback = async (type: string, message: string) => {
     if (!currentUser) throw new Error("You must be logged in to submit feedback.");
     console.log("--- New Feedback Submitted ---");
@@ -655,6 +670,11 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
     }
     
     setUsers(users.map(u => u.id === currentUser.id ? { ...u, ...profileData } : u));
+  };
+
+  const updateProfilePicture = async (pictureUrl: string) => {
+    if (!currentUser) throw new Error("Not logged in.");
+    setUsers(prev => prev.map(u => u.id === currentUser.id ? { ...u, profilePicture: pictureUrl } : u));
   };
 
   // Team Management
@@ -840,10 +860,15 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
             { type: 'text', text: `.` }
         ]);
     };
+    
+    const toggleWallPosting = () => {
+      setIsWallPostingDisabled(prev => !prev);
+    };
 
 
-  const value = { currentUser, users, posts, quests, messages, notifications, teams, invites, applications, activityLog, customEmojis, reactionPointReward, login, logout, signUp, addPost, toggleReaction, addComment, claimQuestReward, updateQuestProgress, sendMessage, leaveTeam, toggleFreeAgentStatus, markNotificationAsRead, markAllNotificationsAsRead, updateNotificationSettings, addQuest, updateQuest, deleteQuest, deleteUser, updateUserRole, deletePost, submitFeedback, adjustUserPoints, updateUserProfile, sendInvite, respondToInvite, applyToTeam, respondToApplication, editTeamDetails, transferTeamOwnership, disbandTeam, pinPost, updateProfileBanner, updateTeamBanner, addCustomEmoji, deleteCustomEmoji, updateProfileVisibility, timeoutUser, deleteComment };
+  const value = { currentUser, users, posts, quests, messages, notifications, teams, invites, applications, activityLog, customEmojis, reactionPointReward, isWallPostingDisabled, login, logout, signUp, addPost, toggleReaction, addComment, claimQuestReward, updateQuestProgress, sendMessage, leaveTeam, toggleFreeAgentStatus, markNotificationAsRead, markAllNotificationsAsRead, updateNotificationSettings, addQuest, updateQuest, deleteQuest, deleteUser, updateUserRole, deletePost, deleteAllPublicPosts, submitFeedback, adjustUserPoints, updateUserProfile, updateProfilePicture, sendInvite, respondToInvite, applyToTeam, respondToApplication, editTeamDetails, transferTeamOwnership, disbandTeam, pinPost, updateProfileBanner, updateTeamBanner, addCustomEmoji, deleteCustomEmoji, updateProfileVisibility, timeoutUser, deleteComment, toggleWallPosting };
 
+  // FIX: Corrected a typo from `Auth.Provider` to `AuthContext.Provider` to fix a 'Cannot find name' error.
   return (
     <AuthContext.Provider value={value}>
       {children}

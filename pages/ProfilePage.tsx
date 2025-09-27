@@ -95,7 +95,7 @@ const SettingsToggle: React.FC<{ label: string; description: string; isChecked: 
 
 
 export const ProfilePage: React.FC = () => {
-    const { currentUser, teams, posts, quests, invites, applications, customEmojis, leaveTeam, toggleFreeAgentStatus, updateUserProfile, updateProfileBanner, addCustomEmoji, deleteCustomEmoji, updateProfileVisibility } = useAuth();
+    const { currentUser, teams, posts, quests, invites, applications, customEmojis, leaveTeam, toggleFreeAgentStatus, updateUserProfile, updateProfileBanner, addCustomEmoji, deleteCustomEmoji, updateProfileVisibility, updateProfilePicture } = useAuth();
     
     const [gamertag, setGamertag] = useState(currentUser?.gamertag || '');
     const [email, setEmail] = useState(currentUser?.email || '');
@@ -172,6 +172,17 @@ export const ProfilePage: React.FC = () => {
             setIsFAModalOpen(true);
         } else {
             handleToggleFreeAgent();
+        }
+    };
+
+    const handleChangePicture = async () => {
+        const newUrl = prompt("Enter new profile picture URL:", currentUser.profilePicture || '');
+        if (newUrl !== null) { 
+            try {
+                await updateProfilePicture(newUrl);
+            } catch (err: any) {
+                alert(err.message);
+            }
         }
     };
     
@@ -351,7 +362,7 @@ export const ProfilePage: React.FC = () => {
                                     {currentUser.gamertag.charAt(0).toUpperCase()}
                                 </div>
                             )}
-                            <button className="mt-4 text-xs bg-brand-interactive/50 hover:bg-brand-interactive text-white font-semibold py-1 px-3 rounded-md transition-colors">
+                            <button onClick={handleChangePicture} className="mt-4 text-xs bg-brand-interactive/50 hover:bg-brand-interactive text-white font-semibold py-1 px-3 rounded-md transition-colors">
                                 Change Picture
                             </button>
                              {isPlusMember && <p className="text-xs text-brand-accent/80 mt-2">Animated GIFs are supported!</p>}
