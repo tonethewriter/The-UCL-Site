@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
@@ -12,6 +13,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { AuthenticatedRoute } from './components/AuthenticatedRoute';
 import { UserProfilePage } from './pages/UserProfilePage';
 import { TonesQuestsPage } from './pages/TonesQuestsPage';
+import { PaymentModal } from './components/PaymentModal';
 
 const App: React.FC = () => {
     return (

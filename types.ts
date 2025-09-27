@@ -23,6 +23,7 @@ export interface Post {
   content: string;
   timestamp: string;
   reactions: Reaction[];
+  pointsAwarded?: boolean;
 }
 
 export type QuestStatus = 'incomplete' | 'started' | 'completed';

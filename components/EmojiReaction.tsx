@@ -19,7 +19,7 @@ export const EmojiReaction: React.FC<EmojiReactionProps> = ({ post }) => {
     };
 
     return (
-        <div className="mt-4 flex items-center space-x-2">
+        <div className="flex items-center space-x-2">
             {post.reactions.map(({ emoji, users }) => (
                 <button
                     key={emoji}

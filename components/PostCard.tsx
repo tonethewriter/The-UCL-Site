@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { Post, User } from '../types';
 import { EmojiReaction } from './EmojiReaction';
 import { RoleBadge } from './RoleBadge';
+import { useAuth } from '../hooks/useAuth';
+import { UCLPointIcon } from '../constants';
 
 interface PostCardProps {
   post: Post;
@@ -10,6 +12,8 @@ interface PostCardProps {
 }
 
 export const PostCard: React.FC<PostCardProps> = ({ post, author }) => {
+    const { reactionPointReward } = useAuth();
+
     const timeAgo = (dateString: string): string => {
         const date = new Date(dateString);
         const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
@@ -47,7 +51,15 @@ export const PostCard: React.FC<PostCardProps> = ({ post, author }) => {
                     <p className="text-xs text-gray-400">{timeAgo(post.timestamp)}</p>
                 </div>
             </div>
-            <p className="text-gray-100 whitespace-pre-wrap">{post.content}</p>
+            <p className="text-gray-100 whitespace-pre-wrap my-4">{post.content}</p>
+            
+            {post.pointsAwarded && (
+                <div className="mb-4 text-xs font-bold text-yellow-300 bg-yellow-500/10 px-2.5 py-1 rounded-full inline-flex items-center gap-1.5">
+                    <UCLPointIcon />
+                    <span>+{reactionPointReward} UCL Points Earned</span>
+                </div>
+            )}
+
             <EmojiReaction post={post} />
         </div>
     );

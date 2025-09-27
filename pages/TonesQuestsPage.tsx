@@ -28,15 +28,19 @@ const QuestCard: React.FC<{ quest: Quest }> = ({ quest }) => {
                         {quest.status}
                     </span>
                 </div>
-                <p className="text-gray-300">{quest.description}</p>
+                <p className="text-gray-300 min-h-[40px]">{quest.description}</p>
             </div>
             <div className="mt-6 pt-4 border-t border-green-800/50">
-                <h3 className="text-sm font-semibold text-yellow-300 mb-2">REWARD</h3>
+                <h3 className="text-sm font-semibold text-yellow-300 mb-2 uppercase tracking-wider">Reward</h3>
                 {quest.status === 'completed' ? (
-                    <p className="text-lg font-bold text-white">{quest.prize}</p>
+                    <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-center">
+                        <p className="text-lg font-bold text-yellow-300">{quest.prize}</p>
+                    </div>
                 ) : (
                     <div className="flex items-center gap-2 text-gray-400">
-                        <QuestionMarkIcon />
+                        <div className="animate-pulse">
+                            <QuestionMarkIcon />
+                        </div>
                         <span>Complete the quest to reveal</span>
                     </div>
                 )}

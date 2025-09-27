@@ -6,6 +6,8 @@ export interface AuthContextType {
   users: User[];
   posts: Post[];
   quests: Quest[];
+  reactionPointThreshold: number;
+  reactionPointReward: number;
   login: (identifier: string, pin: string) => Promise<void>;
   logout: () => void;
   signUp: (gamertag: string, email: string, pin: string, role: UserRole, teamName?: string) => Promise<void>;
@@ -18,10 +20,13 @@ export interface AuthContextType {
   removeCoOwner: (coOwnerId: string) => Promise<void>;
   updateUserRole: (userId: string, newRole: UserRole) => Promise<void>;
   upgradeToPlayerPlus: () => Promise<void>;
+  upgradeToTeamOwnerPlus: () => Promise<void>;
   addQuest: (title: string, description: string, prize: string) => Promise<void>;
   updateQuestStatus: (questId: string, status: QuestStatus) => Promise<void>;
   deleteQuest: (questId: string) => Promise<void>;
   grantQuestReward: (userId: string, prize: string) => Promise<void>;
+  updateReactionPointConfig: (threshold: number, reward: number) => Promise<void>;
+  manualUpdateUserPoints: (userId: string, points: number) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -44,7 +49,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(getInitialState<User | null>('currentUser', null));
   const [users, setUsers] = useState<User[]>(() => getInitialState<User[]>('users', [
     { id: '1', gamertag: 'admin', email: 'admin@ucl.com', pin: '1234', role: 'admin', uclPoints: 9999 },
-    { id: '2', gamertag: 'PlayerOne', email: 'player@one.com', pin: '0000', role: 'player', uclPoints: 1250 }
+    { id: '2', gamertag: 'PlayerOne', email: 'player@one.com', pin: '0000', role: 'player', uclPoints: 1250 },
+    { id: '3', gamertag: 'TeamOwner', email: 'owner@one.com', pin: '0000', role: 'team_owner', teamName: 'The Legends', uclPoints: 2500 },
   ]));
   const [posts, setPosts] = useState<Post[]>(() => getInitialState<Post[]>('posts', [
       {
@@ -54,6 +60,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         content: 'Welcome to the United Clan League! This is the first official post. Feel free to react.',
         timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
         reactions: [{ emoji: '🔥', users: ['2'] }],
+        pointsAwarded: false,
       },
       {
         id: 'p2',
@@ -62,6 +69,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         content: 'Excited to be here! Looking forward to connecting with other members.',
         timestamp: new Date(Date.now() - 1000 * 60 * 2).toISOString(),
         reactions: [{ emoji: '👍', users: ['1'] }, { emoji: '❤️', users: ['1'] }],
+        pointsAwarded: false,
+      },
+      {
+        id: 'p3',
+        authorId: '3',
+        authorGamertag: 'TeamOwner',
+        content: 'My team, The Legends, is looking for new talent! Message me to try out.',
+        timestamp: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
+        reactions: [{ emoji: '🔥', users: ['1', '2'] }],
+        pointsAwarded: false,
       },
   ]));
    const [quests, setQuests] = useState<Quest[]>(() => getInitialState<Quest[]>('quests', [
@@ -87,6 +104,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       prize: 'Legendary Loot Box'
     }
   ]));
+  const [reactionPointThreshold, setReactionPointThreshold] = useState<number>(() => getInitialState<number>('reactionPointThreshold', 20));
+  const [reactionPointReward, setReactionPointReward] = useState<number>(() => getInitialState<number>('reactionPointReward', 100));
 
   useEffect(() => {
     localStorage.setItem('currentUser', JSON.stringify(currentUser));
@@ -104,8 +123,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.setItem('quests', JSON.stringify(quests));
   }, [quests]);
 
+  useEffect(() => {
+    localStorage.setItem('reactionPointThreshold', JSON.stringify(reactionPointThreshold));
+  }, [reactionPointThreshold]);
+
+  useEffect(() => {
+    localStorage.setItem('reactionPointReward', JSON.stringify(reactionPointReward));
+  }, [reactionPointReward]);
+
   const login = async (identifier: string, pin: string): Promise<void> => {
-    // Special admin case
     if (identifier.toLowerCase() === 'admin' && pin === '1234') {
         const adminUser = users.find(u => u.role === 'admin');
         if (adminUser) {
@@ -196,6 +222,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       content,
       timestamp: new Date().toISOString(),
       reactions: [],
+      pointsAwarded: false,
     };
     setPosts(prev => [newPost, ...prev]);
   };
@@ -208,40 +235,65 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const deleteUser = (userId: string) => {
     if (currentUser?.role !== 'admin' || currentUser.id === userId) return;
     setUsers(prev => prev.filter(u => u.id !== userId));
-    // Also remove posts by the deleted user
     setPosts(prev => prev.filter(p => p.authorId !== userId));
   };
   
   const toggleReaction = (postId: string, emoji: string) => {
     if (!currentUser) return;
 
-    setPosts(posts.map(post => {
+    let postAwardedPoints = false;
+    const postAuthorId: string | null = null;
+
+    const newPosts = posts.map(post => {
         if (post.id === postId) {
-            const reactionIndex = post.reactions.findIndex(r => r.emoji === emoji);
-            let newReactions = [...post.reactions];
+            let newReactions: Reaction[] = JSON.parse(JSON.stringify(post.reactions));
+            const reactionIndex = newReactions.findIndex(r => r.emoji === emoji);
 
             if (reactionIndex > -1) {
                 const reaction = newReactions[reactionIndex];
                 const userIndex = reaction.users.indexOf(currentUser.id);
                 if (userIndex > -1) {
-                    // User is removing their reaction
                     reaction.users.splice(userIndex, 1);
                     if (reaction.users.length === 0) {
-                        // If no users are left for this reaction, remove it
                         newReactions.splice(reactionIndex, 1);
                     }
                 } else {
-                    // User is adding their reaction
                     reaction.users.push(currentUser.id);
                 }
             } else {
-                // First reaction of this type
                 newReactions.push({ emoji, users: [currentUser.id] });
             }
-            return { ...post, reactions: newReactions };
+
+            const updatedPost = { ...post, reactions: newReactions };
+            const totalReactions = updatedPost.reactions.reduce((sum, reaction) => sum + reaction.users.length, 0);
+            
+            if (totalReactions >= reactionPointThreshold && !updatedPost.pointsAwarded) {
+                updatedPost.pointsAwarded = true;
+                postAwardedPoints = true;
+            }
+
+            return updatedPost;
         }
         return post;
-    }));
+    });
+
+    if (postAwardedPoints) {
+      const awardedPost = newPosts.find(p => p.id === postId);
+      if (awardedPost) {
+        setUsers(currentUsers => currentUsers.map(user => {
+          if (user.id === awardedPost.authorId) {
+            const updatedUser = { ...user, uclPoints: user.uclPoints + reactionPointReward };
+            if (currentUser && currentUser.id === updatedUser.id) {
+              setCurrentUser(updatedUser);
+            }
+            return updatedUser;
+          }
+          return user;
+        }));
+      }
+    }
+    
+    setPosts(newPosts);
   };
 
   const assignCoOwner = async (identifier: string): Promise<void> => {
@@ -308,7 +360,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUsers(currentUsers => currentUsers.map(user => {
       if (user.id === userId) {
         const updatedUser = { ...user, role: newRole };
-        // If user is no longer an owner/co-owner, remove team name
         if (!['team_owner', 'team_owner_plus', 'co_owner'].includes(newRole)) {
             delete updatedUser.teamName;
         }
@@ -323,6 +374,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error('Only players can upgrade to Player Plus.');
     }
     const updatedUser = { ...currentUser, role: 'player_plus' as UserRole };
+    
+    setUsers(currentUsers => currentUsers.map(user => 
+        user.id === currentUser.id ? updatedUser : user
+    ));
+    setCurrentUser(updatedUser);
+  };
+
+  const upgradeToTeamOwnerPlus = async (): Promise<void> => {
+    if (!currentUser || currentUser.role !== 'team_owner') {
+        throw new Error('Only Team Owners can upgrade to Team Owner Plus.');
+    }
+    const updatedUser = { ...currentUser, role: 'team_owner_plus' as UserRole };
     
     setUsers(currentUsers => currentUsers.map(user => 
         user.id === currentUser.id ? updatedUser : user
@@ -375,7 +438,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } else {
           alert(`Prize is "${prize}". Please award this manually to ${user.gamertag}.`);
         }
-        // Also update current user if they are the one receiving the reward
         if (currentUser?.id === userId) {
             setCurrentUser(finalUser);
         }
@@ -389,9 +451,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const updateReactionPointConfig = async (threshold: number, reward: number): Promise<void> => {
+    if (currentUser?.role !== 'admin') {
+      throw new Error("You don't have permission to change site settings.");
+    }
+    setReactionPointThreshold(threshold);
+    setReactionPointReward(reward);
+  };
+
+  const manualUpdateUserPoints = async (userId: string, points: number): Promise<void> => {
+    if (currentUser?.role !== 'admin') {
+      throw new Error("You don't have permission to update user points.");
+    }
+    setUsers(currentUsers => currentUsers.map(user => {
+        if (user.id === userId) {
+            const updatedUser = { ...user, uclPoints: user.uclPoints + points };
+             if (currentUser && currentUser.id === updatedUser.id) {
+                setCurrentUser(updatedUser);
+             }
+            return updatedUser;
+        }
+        return user;
+    }));
+  };
 
   return (
-    <AuthContext.Provider value={{ currentUser, users, posts, quests, login, logout, signUp, addPost, deletePost, deleteUser, toggleReaction, updateUser, assignCoOwner, removeCoOwner, updateUserRole, upgradeToPlayerPlus, addQuest, updateQuestStatus, deleteQuest, grantQuestReward }}>
+    <AuthContext.Provider value={{ currentUser, users, posts, quests, reactionPointThreshold, reactionPointReward, login, logout, signUp, addPost, deletePost, deleteUser, toggleReaction, updateUser, assignCoOwner, removeCoOwner, updateUserRole, upgradeToPlayerPlus, upgradeToTeamOwnerPlus, addQuest, updateQuestStatus, deleteQuest, grantQuestReward, updateReactionPointConfig, manualUpdateUserPoints }}>
       {children}
     </AuthContext.Provider>
   );
