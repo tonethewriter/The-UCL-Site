@@ -15,14 +15,19 @@ const PinIcon: React.FC<{className?: string}> = ({ className }) => (
 
 
 export const PostCard: React.FC<{ post: Post; author: User | undefined; }> = ({ post, author }) => {
-    const { currentUser, reactionPointReward, addComment, deletePost, users, pinPost } = useAuth();
+    const { currentUser, reactionPointReward, addComment, deletePost, users, pinPost, deleteComment } = useAuth();
     const [isCommentsOpen, setIsCommentsOpen] = useState(false);
     const [newComment, setNewComment] = useState('');
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isDeleteCommentModalOpen, setIsDeleteCommentModalOpen] = useState(false);
+    const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
 
     const isAuthor = currentUser?.id === post.authorId;
     const isPlusMember = currentUser?.role.includes('_plus') || currentUser?.role === 'admin';
     const isPinned = currentUser?.pinnedPostId === post.id;
+    const isModerator = currentUser?.role === 'admin' || currentUser?.role === 'moderator';
+    const isTimedOut = currentUser?.timeoutUntil && new Date(currentUser.timeoutUntil) > new Date();
+
 
     const timeAgo = (dateString: string): string => {
         const date = new Date(dateString);
@@ -53,6 +58,19 @@ export const PostCard: React.FC<{ post: Post; author: User | undefined; }> = ({ 
         setIsDeleteModalOpen(false);
     };
 
+    const openDeleteCommentModal = (commentId: string) => {
+        setDeletingCommentId(commentId);
+        setIsDeleteCommentModalOpen(true);
+    };
+
+    const handleConfirmDeleteComment = () => {
+        if (deletingCommentId) {
+            deleteComment(post.id, deletingCommentId);
+        }
+        setIsDeleteCommentModalOpen(false);
+        setDeletingCommentId(null);
+    };
+
     const handlePinClick = () => {
         pinPost(isPinned ? null : post.id);
     };
@@ -71,7 +89,7 @@ export const PostCard: React.FC<{ post: Post; author: User | undefined; }> = ({ 
                             <PinIcon className="w-5 h-5" />
                         </button>
                     )}
-                    {currentUser?.role === 'admin' && (
+                    {isModerator && (
                         <button
                             onClick={() => setIsDeleteModalOpen(true)}
                             className="text-red-500/60 hover:text-red-500 hover:bg-red-500/10 p-1.5 rounded-full transition-colors"
@@ -129,7 +147,7 @@ export const PostCard: React.FC<{ post: Post; author: User | undefined; }> = ({ 
                             post.comments.map(comment => {
                                 const commentAuthor = users.find(u => u.id === comment.authorId);
                                 return (
-                                <div key={comment.id} className="flex items-start space-x-3">
+                                <div key={comment.id} className="flex items-start space-x-3 group">
                                     <div className="w-8 h-8 rounded-full bg-brand-border flex items-center justify-center font-bold text-brand-accent text-sm flex-shrink-0">
                                         {comment.authorGamertag.charAt(0).toUpperCase()}
                                     </div>
@@ -138,7 +156,14 @@ export const PostCard: React.FC<{ post: Post; author: User | undefined; }> = ({ 
                                             <Link to={`/users/${comment.authorId}`} className="font-semibold text-white text-sm hover:underline">
                                                 <ShimmeringGamertag user={commentAuthor} />
                                             </Link>
-                                            <span className="text-xs text-brand-text-muted">{timeAgo(comment.timestamp)}</span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs text-brand-text-muted">{timeAgo(comment.timestamp)}</span>
+                                                {isModerator && (
+                                                    <button onClick={() => openDeleteCommentModal(comment.id)} className="text-red-500/60 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <TrashIcon className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
                                         <p className="text-sm text-brand-text mt-1 whitespace-pre-wrap">{parseMentions(comment.content, users)}</p>
                                     </div>
@@ -157,12 +182,13 @@ export const PostCard: React.FC<{ post: Post; author: User | undefined; }> = ({ 
                                     <textarea
                                         value={newComment}
                                         onChange={(e) => setNewComment(e.target.value)}
-                                        placeholder="Write a comment..."
-                                        className="w-full bg-black/30 text-white border border-brand-border rounded-md p-2 focus:outline-none focus:ring-1 focus:ring-brand-accent transition text-sm"
+                                        placeholder={isTimedOut ? "You are timed out and cannot comment." : "Write a comment..."}
+                                        className="w-full bg-black/30 text-white border border-brand-border rounded-md p-2 focus:outline-none focus:ring-1 focus:ring-brand-accent transition text-sm disabled:bg-red-900/30 disabled:border-red-500/30 disabled:cursor-not-allowed"
                                         rows={2}
+                                        disabled={isTimedOut}
                                     />
                                     <div className="text-right">
-                                    <button type="submit" disabled={!newComment.trim()} className="mt-2 bg-brand-interactive hover:bg-green-500 text-black font-bold py-1 px-4 rounded-md text-xs transition disabled:bg-brand-border disabled:text-brand-accent/50 disabled:cursor-not-allowed">
+                                    <button type="submit" disabled={!newComment.trim() || isTimedOut} className="mt-2 bg-brand-interactive hover:bg-green-500 text-black font-bold py-1 px-4 rounded-md text-xs transition disabled:bg-brand-border disabled:text-brand-accent/50 disabled:cursor-not-allowed">
                                         Post
                                     </button>
                                     </div>
@@ -179,6 +205,14 @@ export const PostCard: React.FC<{ post: Post; author: User | undefined; }> = ({ 
                 title="Delete Post"
                 message="Are you sure you want to permanently delete this post? This action cannot be undone."
                 confirmText="Yes, Delete Post"
+            />
+            <ConfirmationModal
+                isOpen={isDeleteCommentModalOpen}
+                onClose={() => setIsDeleteCommentModalOpen(false)}
+                onConfirm={handleConfirmDeleteComment}
+                title="Delete Comment"
+                message="Are you sure you want to permanently delete this comment? This action cannot be undone."
+                confirmText="Yes, Delete Comment"
             />
         </>
     );

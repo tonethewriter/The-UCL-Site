@@ -1,4 +1,12 @@
-export type UserRole = 'player' | 'player_plus' | 'team_owner' | 'team_owner_plus' | 'co_owner' | 'admin';
+// FIX: Replaced circular self-reference of UserRole with a complete type definition.
+export type UserRole =
+  | 'admin'
+  | 'co_owner'
+  | 'moderator'
+  | 'player'
+  | 'player_plus'
+  | 'team_owner'
+  | 'team_owner_plus';
 
 export interface NotificationSettings {
   inApp: {
@@ -44,6 +52,7 @@ export interface User {
   twitch?: string;
   youtube?: string;
   profileVisibility?: ProfileVisibility;
+  timeoutUntil?: string; // ISO string for when the timeout expires
 }
 
 export interface Reaction {

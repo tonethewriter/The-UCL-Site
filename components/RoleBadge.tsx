@@ -8,6 +8,7 @@ interface RoleBadgeProps {
 export const RoleBadge: React.FC<RoleBadgeProps> = ({ role }) => {
     const roleStyles: Record<UserRole, { text: string; className: string }> = {
         admin: { text: 'Admin', className: 'bg-red-600 text-white' },
+        moderator: { text: 'Moderator', className: 'bg-blue-600 text-white' },
         team_owner_plus: { text: 'Owner ⭐', className: 'bg-brand-accent text-black' },
         team_owner: { text: 'Owner', className: 'bg-brand-interactive text-white' },
         co_owner: { text: 'Co-Owner', className: 'bg-emerald-600 text-white' },

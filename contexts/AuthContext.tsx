@@ -2,6 +2,10 @@ import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { User, Post, Quest, UserRole, Comment, Message, Notification, NotificationType, NotificationSettings, Team, Invite, Application, InviteStatus, ActivityLog, ActivityLogEntity, CustomEmoji, ProfileVisibility } from '../types';
 
 // --- Mock Data (acts as our in-memory database) ---
+
+// Use a static date to make mock data consistent across reloads.
+const MOCK_DATE = new Date('2024-07-20T12:00:00.000Z');
+
 const defaultNotificationSettings: NotificationSettings = {
     inApp: {
         new_reaction: true,
@@ -29,16 +33,16 @@ const defaultVisibilitySettings: ProfileVisibility = {
 
 const initialUsers: User[] = [
   // Old users
-  { id: '1', gamertag: 'Admin', email: 'admin@ucl.com', pin: '1234', role: 'admin', uclPoints: 1500, profilePicture: 'https://i.pravatar.cc/150?u=Admin', profileBanner: 'https://placehold.co/1200x400/166534/4ade80?text=Admin+HQ', notificationSettings: defaultNotificationSettings, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString(), profileVisibility: defaultVisibilitySettings },
-  { id: '4', gamertag: 'Viper', email: 'viper@ucl.com', pin: '1234', role: 'team_owner_plus', teamId: 't2', uclPoints: 1100, profilePicture: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZnejRzZTNkcnNmMjB4N2ZtN2Y0cHJqZm5tYW51NWYzcGZseG8zayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/f4V2mqb6YE50I/giphy.gif', profileBanner: 'https://placehold.co/1200x400/8b5cf6/ffffff?text=Viper', pinnedPostId: 'p3', notificationSettings: defaultNotificationSettings, twitter: 'https://twitter.com/example', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10).toISOString(), profileVisibility: defaultVisibilitySettings },
-  { id: '6', gamertag: 'CoOwner', email: 'coowner@ucl.com', pin: '1234', role: 'co_owner', teamId: 't2', uclPoints: 900, profilePicture: 'https://i.pravatar.cc/150?u=6', notificationSettings: defaultNotificationSettings, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(), profileVisibility: defaultVisibilitySettings },
-  { id: '7', gamertag: 'Shadow', email: 'shadow@ucl.com', pin: '1234', role: 'team_owner', teamId: 't1', uclPoints: 1000, profilePicture: 'https://i.pravatar.cc/150?u=7', notificationSettings: defaultNotificationSettings, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 15).toISOString(), profileVisibility: defaultVisibilitySettings },
+  { id: '1', gamertag: 'Admin', email: 'admin@ucl.com', pin: '1234', role: 'admin', uclPoints: 1500, profilePicture: 'https://i.pravatar.cc/150?u=Admin', profileBanner: 'https://placehold.co/1200x400/166534/4ade80?text=Admin+HQ', notificationSettings: defaultNotificationSettings, createdAt: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 24 * 30).toISOString(), profileVisibility: defaultVisibilitySettings },
+  { id: '4', gamertag: 'Viper', email: 'viper@ucl.com', pin: '1234', role: 'team_owner_plus', teamId: 't2', uclPoints: 1100, profilePicture: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZnejRzZTNkcnNmMjB4N2ZtN2Y0cHJqZm5tYW51NWYzcGZseG8zayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/f4V2mqb6YE50I/giphy.gif', profileBanner: 'https://placehold.co/1200x400/8b5cf6/ffffff?text=Viper', pinnedPostId: 'p3', notificationSettings: defaultNotificationSettings, twitter: 'https://twitter.com/example', createdAt: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 24 * 10).toISOString(), profileVisibility: defaultVisibilitySettings },
+  { id: '6', gamertag: 'Moderator', email: 'coowner@ucl.com', pin: '1234', role: 'moderator', teamId: 't2', uclPoints: 900, profilePicture: 'https://i.pravatar.cc/150?u=6', notificationSettings: defaultNotificationSettings, createdAt: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 24 * 5).toISOString(), profileVisibility: defaultVisibilitySettings },
+  { id: '7', gamertag: 'Shadow', email: 'shadow@ucl.com', pin: '1234', role: 'team_owner', teamId: 't1', uclPoints: 1000, profilePicture: 'https://i.pravatar.cc/150?u=7', notificationSettings: defaultNotificationSettings, createdAt: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 24 * 15).toISOString(), profileVisibility: defaultVisibilitySettings },
   
-  // Recent users (within 48 hours)
-  { id: '2', gamertag: 'Sniper', email: 'sniper@ucl.com', pin: '1234', role: 'player_plus', teamId: 't1', uclPoints: 850, profilePicture: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdzg1cjN1eDFwbWE5bGl6cjJ0YjU4NHo5M2V0ZGN0YmY5eGh0ZTM1dSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/lv6K2844D2k2Q/giphy.gif', profileBanner: 'https://placehold.co/1200x400/3b82f6/ffffff?text=Sniper', notificationSettings: defaultNotificationSettings, twitch: 'https://www.twitch.tv/example', youtube: 'https://www.youtube.com/example', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(), profileVisibility: defaultVisibilitySettings },
-  { id: '3', gamertag: 'Ghost', email: 'ghost@ucl.com', pin: '1234', role: 'player', teamId: 't1', uclPoints: 320, profilePicture: 'https://i.pravatar.cc/150?u=3', notificationSettings: defaultNotificationSettings, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), profileVisibility: defaultVisibilitySettings },
-  { id: '5', gamertag: 'Rogue', email: 'rogue@ucl.com', pin: '1234', role: 'player', uclPoints: 450, profilePicture: 'https://i.pravatar.cc/150?u=5', isFreeAgent: true, notificationSettings: defaultNotificationSettings, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 40).toISOString(), profileVisibility: defaultVisibilitySettings },
-  { id: '8', gamertag: 'Blade', email: 'blade@ucl.com', pin: '1234', role: 'player', uclPoints: 200, profilePicture: 'https://i.pravatar.cc/150?u=8', isFreeAgent: true, notificationSettings: defaultNotificationSettings, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 60).toISOString(), profileVisibility: defaultVisibilitySettings }, // > 48h
+  // Recent users (relative to MOCK_DATE)
+  { id: '2', gamertag: 'Sniper', email: 'sniper@ucl.com', pin: '1234', role: 'player_plus', teamId: 't1', uclPoints: 850, profilePicture: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdzg1cjN1eDFwbWE5bGl6cjJ0YjU4NHo5M2V0ZGN0YmY5eGh0ZTM1dSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/lv6K2844D2k2Q/giphy.gif', profileBanner: 'https://placehold.co/1200x400/3b82f6/ffffff?text=Sniper', notificationSettings: defaultNotificationSettings, twitch: 'https://www.twitch.tv/example', youtube: 'https://www.youtube.com/example', createdAt: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 12).toISOString(), profileVisibility: defaultVisibilitySettings },
+  { id: '3', gamertag: 'Ghost', email: 'ghost@ucl.com', pin: '1234', role: 'player', teamId: 't1', uclPoints: 320, profilePicture: 'https://i.pravatar.cc/150?u=3', notificationSettings: defaultNotificationSettings, createdAt: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 24).toISOString(), profileVisibility: defaultVisibilitySettings },
+  { id: '5', gamertag: 'Rogue', email: 'rogue@ucl.com', pin: '1234', role: 'player', uclPoints: 450, profilePicture: 'https://i.pravatar.cc/150?u=5', isFreeAgent: true, notificationSettings: defaultNotificationSettings, createdAt: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 40).toISOString(), profileVisibility: defaultVisibilitySettings },
+  { id: '8', gamertag: 'Blade', email: 'blade@ucl.com', pin: '1234', role: 'player', uclPoints: 200, profilePicture: 'https://i.pravatar.cc/150?u=8', isFreeAgent: true, notificationSettings: defaultNotificationSettings, createdAt: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 60).toISOString(), profileVisibility: defaultVisibilitySettings }, // > 48h
 ];
 
 const initialTeams: Team[] = [
@@ -67,10 +71,11 @@ const initialPosts: Post[] = [
     authorGamertag: 'Sniper',
     content: 'Just hit a sick 360 no-scope in the last match! Clip coming soon. Hey @Admin, check this out! #UCL #Gaming',
     imageUrl: 'https://placehold.co/600x400/3b82f6/ffffff?text=Amazing+Clip!',
-    timestamp: new Date(Date.now() - 3600 * 1000 * 2).toISOString(),
+    timestamp: new Date(MOCK_DATE.getTime() - 3600 * 1000 * 2).toISOString(),
     reactions: [{ emoji: '🔥', users: ['1', '4'] }, { emoji: '😮', users: ['3'] }, { emoji: 'ce2', users: ['7'] }],
     comments: [
-        { id: 'c1', authorId: '4', authorGamertag: 'Viper', content: 'Can\'t wait to see it @Sniper!', timestamp: new Date(Date.now() - 3600 * 1000 * 1.5).toISOString() }
+        { id: 'c1', authorId: '4', authorGamertag: 'Viper', content: 'Can\'t wait to see it @Sniper!', timestamp: new Date(MOCK_DATE.getTime() - 3600 * 1000 * 1.5).toISOString() },
+        { id: 'c2', authorId: '3', authorGamertag: 'Ghost', content: 'This is a comment that can be deleted by a mod.', timestamp: new Date(MOCK_DATE.getTime() - 3600 * 1000 * 1).toISOString() }
     ],
     pointsAwarded: true
   },
@@ -79,7 +84,7 @@ const initialPosts: Post[] = [
     authorId: '1',
     authorGamertag: 'Admin',
     content: 'Welcome to the new UCL Wall! Post your highlights, discuss strategies, and connect with other members. New quests are up, go check them out!',
-    timestamp: new Date(Date.now() - 3600 * 1000 * 24).toISOString(),
+    timestamp: new Date(MOCK_DATE.getTime() - 3600 * 1000 * 24).toISOString(),
     reactions: [{ emoji: '👍', users: ['2', '3', '4'] }],
     comments: [],
   },
@@ -88,7 +93,7 @@ const initialPosts: Post[] = [
     authorId: '4',
     authorGamertag: 'Viper',
     content: 'Bravo Company is recruiting! We are looking for dedicated players who value teamwork. Apply on our team page!',
-    timestamp: new Date(Date.now() - 3600 * 1000 * 8).toISOString(),
+    timestamp: new Date(MOCK_DATE.getTime() - 3600 * 1000 * 8).toISOString(),
     reactions: [{ emoji: '👍', users: ['5', '8'] }, { emoji: 'ce1', users:['6'] }],
     comments: [],
   },
@@ -99,7 +104,7 @@ const initialPosts: Post[] = [
     authorGamertag: 'Viper',
     content: 'Team meeting this Friday at 8 PM EST to go over the new strats. Please confirm your attendance.',
     privateTeamId: 't2',
-    timestamp: new Date(Date.now() - 3600 * 1000 * 4).toISOString(),
+    timestamp: new Date(MOCK_DATE.getTime() - 3600 * 1000 * 4).toISOString(),
     reactions: [{ emoji: '👍', users: ['6'] }],
     comments: [],
   },
@@ -108,7 +113,7 @@ const initialPosts: Post[] = [
     authorId: String((i % 5) + 2),
     authorGamertag: initialUsers.find(u => u.id === String((i % 5) + 2))?.gamertag || 'User',
     content: `This is dummy post number ${i + 3} to demonstrate infinite scrolling. Hope you enjoy the seamless experience!`,
-    timestamp: new Date(Date.now() - 3600 * 1000 * (25 + i * 2)).toISOString(),
+    timestamp: new Date(MOCK_DATE.getTime() - 3600 * 1000 * (25 + i * 2)).toISOString(),
     reactions: [],
     comments: [],
   }))
@@ -122,26 +127,26 @@ const initialQuests: Quest[] = [
 ];
 
 const initialMessages: Message[] = [
-  { id: 'm1', senderId: '1', senderGamertag: 'Admin', channelId: 'owners_chat', content: 'Welcome to the new Owners chat! Feel free to discuss league matters here.', timestamp: new Date(Date.now() - 3600 * 1000 * 5).toISOString() },
-  { id: 'm2', senderId: '4', senderGamertag: 'Viper', channelId: 'owners_chat', content: 'This is a great addition, thanks Admin!', timestamp: new Date(Date.now() - 3600 * 1000 * 4).toISOString() },
-  { id: 'm3', senderId: '4', senderGamertag: 'Viper', channelId: 'team_Bravo_Company', content: 'Team Bravo, let\'s get some practice matches in this weekend. Let me know your availability.', timestamp: new Date(Date.now() - 3600 * 1000 * 3).toISOString() },
-  { id: 'm4', senderId: '2', senderGamertag: 'Sniper', channelId: 'team_Alpha_Squad', content: 'Our owner posted a new quest for us, we need to prep for the next tourney.', timestamp: new Date(Date.now() - 3600 * 1000 * 2).toISOString() },
-  { id: 'm5', senderId: '3', senderGamertag: 'Ghost', channelId: 'team_Alpha_Squad', content: 'I\'m free Saturday afternoon.', timestamp: new Date(Date.now() - 3600 * 1000 * 1).toISOString() },
+  { id: 'm1', senderId: '1', senderGamertag: 'Admin', channelId: 'owners_chat', content: 'Welcome to the new Owners chat! Feel free to discuss league matters here.', timestamp: new Date(MOCK_DATE.getTime() - 3600 * 1000 * 5).toISOString() },
+  { id: 'm2', senderId: '4', senderGamertag: 'Viper', channelId: 'owners_chat', content: 'This is a great addition, thanks Admin!', timestamp: new Date(MOCK_DATE.getTime() - 3600 * 1000 * 4).toISOString() },
+  { id: 'm3', senderId: '4', senderGamertag: 'Viper', channelId: 'team_Bravo_Company', content: 'Team Bravo, let\'s get some practice matches in this weekend. Let me know your availability.', timestamp: new Date(MOCK_DATE.getTime() - 3600 * 1000 * 3).toISOString() },
+  { id: 'm4', senderId: '2', senderGamertag: 'Sniper', channelId: 'team_Alpha_Squad', content: 'Our owner posted a new quest for us, we need to prep for the next tourney.', timestamp: new Date(MOCK_DATE.getTime() - 3600 * 1000 * 2).toISOString() },
+  { id: 'm5', senderId: '3', senderGamertag: 'Ghost', channelId: 'team_Alpha_Squad', content: 'I\'m free Saturday afternoon.', timestamp: new Date(MOCK_DATE.getTime() - 3600 * 1000 * 1).toISOString() },
 ];
 
 const initialNotifications: Notification[] = [
-    { id: 'n1', userId: '2', type: 'new_reaction', message: 'Admin reacted 🔥 to your post.', link: '/', isRead: false, timestamp: new Date(Date.now() - 3600 * 1000 * 2).toISOString()},
-    { id: 'n2', userId: '2', type: 'new_comment', message: 'Viper commented on your post: "Can\'t wait to see it!"', link: '/', isRead: true, timestamp: new Date(Date.now() - 3600 * 1000 * 1.5).toISOString()},
-    { id: 'n3', userId: '2', type: 'quest_complete', message: 'You completed the quest: First Blood!', link: '/quests', isRead: false, timestamp: new Date(Date.now() - 3600 * 1000 * 10).toISOString()},
-    { id: 'n4', userId: '5', type: 'team_invite', message: 'Viper has invited you to join Bravo Company.', link: '/profile', isRead: false, timestamp: new Date(Date.now() - 3600 * 1000 * 1).toISOString()},
-    { id: 'n5', userId: '7', type: 'team_application', message: 'Blade has applied to join Alpha Squad.', link: '/teams/t1', isRead: false, timestamp: new Date(Date.now() - 3600 * 1000 * 1).toISOString()},
+    { id: 'n1', userId: '2', type: 'new_reaction', message: 'Admin reacted 🔥 to your post.', link: '/', isRead: false, timestamp: new Date(MOCK_DATE.getTime() - 3600 * 1000 * 2).toISOString()},
+    { id: 'n2', userId: '2', type: 'new_comment', message: 'Viper commented on your post: "Can\'t wait to see it!"', link: '/', isRead: true, timestamp: new Date(MOCK_DATE.getTime() - 3600 * 1000 * 1.5).toISOString()},
+    { id: 'n3', userId: '2', type: 'quest_complete', message: 'You completed the quest: First Blood!', link: '/quests', isRead: false, timestamp: new Date(MOCK_DATE.getTime() - 3600 * 1000 * 10).toISOString()},
+    { id: 'n4', userId: '5', type: 'team_invite', message: 'Viper has invited you to join Bravo Company.', link: '/profile', isRead: false, timestamp: new Date(MOCK_DATE.getTime() - 3600 * 1000 * 1).toISOString()},
+    { id: 'n5', userId: '7', type: 'team_application', message: 'Blade has applied to join Alpha Squad.', link: '/teams/t1', isRead: false, timestamp: new Date(MOCK_DATE.getTime() - 3600 * 1000 * 1).toISOString()},
 ];
 
 const initialActivityLog: ActivityLog[] = [
-    { id: 'al0', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(), entities: [{ type: 'user', id: '2', text: 'Sniper' }, { type: 'text', text: ' has registered as a new user.' }] },
-    { id: 'al1', timestamp: new Date(Date.now() - 3600 * 1000 * 20).toISOString(), entities: [{ type: 'user', id: '5', text: 'Rogue' }, { type: 'text', text: ' became a free agent.' }] },
-    { id: 'al2', timestamp: new Date(Date.now() - 3600 * 1000 * 25).toISOString(), entities: [{ type: 'user', id: '8', text: 'Blade' }, { type: 'text', text: ' has registered as a new user.' }] },
-    { id: 'al3', timestamp: new Date(Date.now() - 3600 * 1000 * 30).toISOString(), entities: [{ type: 'user', id: '4', text: 'Viper' }, { type: 'text', text: ' created a new team: ' }, { type: 'team', id: 't2', text: 'Bravo Company' }, { type: 'text', text: '.' }] },
+    { id: 'al0', timestamp: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 12).toISOString(), entities: [{ type: 'user', id: '2', text: 'Sniper' }, { type: 'text', text: ' has registered as a new user.' }] },
+    { id: 'al1', timestamp: new Date(MOCK_DATE.getTime() - 3600 * 1000 * 20).toISOString(), entities: [{ type: 'user', id: '5', text: 'Rogue' }, { type: 'text', text: ' became a free agent.' }] },
+    { id: 'al2', timestamp: new Date(MOCK_DATE.getTime() - 3600 * 1000 * 25).toISOString(), entities: [{ type: 'user', id: '8', text: 'Blade' }, { type: 'text', text: ' has registered as a new user.' }] },
+    { id: 'al3', timestamp: new Date(MOCK_DATE.getTime() - 3600 * 1000 * 30).toISOString(), entities: [{ type: 'user', id: '4', text: 'Viper' }, { type: 'text', text: ' created a new team: ' }, { type: 'team', id: 't2', text: 'Bravo Company' }, { type: 'text', text: '.' }] },
 ];
 
 export interface AuthContextType {
@@ -193,6 +198,8 @@ export interface AuthContextType {
   addCustomEmoji: (name: string, imageUrl: string) => Promise<void>;
   deleteCustomEmoji: (emojiId: string) => Promise<void>;
   updateProfileVisibility: (settings: ProfileVisibility) => Promise<void>;
+  timeoutUser: (userId: string, durationHours: number) => Promise<void>;
+  deleteComment: (postId: string, commentId: string) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -568,7 +575,20 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
   };
 
   const deletePost = (postId: string) => {
+      const postToDelete = posts.find(p => p.id === postId);
+      if (!postToDelete || !currentUser) return;
+      const author = users.find(u => u.id === postToDelete.authorId);
+
       setPosts(prev => prev.filter(p => p.id !== postId));
+
+      if (postToDelete.authorId !== currentUser.id) {
+          createActivityLog([
+              { type: 'user', id: currentUser.id, text: currentUser.gamertag },
+              { type: 'text', text: ' deleted a post by ' },
+              { type: 'user', id: postToDelete.authorId, text: author?.gamertag || 'a user' },
+              { type: 'text', text: '.' }
+          ]);
+      }
   };
 
   const submitFeedback = async (type: string, message: string) => {
@@ -759,9 +779,50 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
         setCurrentUser(updatedUser);
         setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
     };
+    
+    // Moderator Actions
+    const timeoutUser = async (userId: string, durationHours: number) => {
+        if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'moderator')) throw new Error("Insufficient permissions.");
+        const userToTimeout = users.find(u => u.id === userId);
+        if (!userToTimeout) throw new Error("User not found.");
+
+        const timeoutEndDate = new Date(Date.now() + durationHours * 60 * 60 * 1000);
+        const updatedUser = { ...userToTimeout, timeoutUntil: timeoutEndDate.toISOString() };
+
+        setUsers(prev => prev.map(u => u.id === userId ? updatedUser : u));
+
+        createActivityLog([
+            { type: 'user', id: currentUser.id, text: currentUser.gamertag },
+            { type: 'text', text: ` timed out ` },
+            { type: 'user', id: userId, text: userToTimeout.gamertag },
+            { type: 'text', text: ` for ${durationHours} hour(s).` }
+        ]);
+    };
+
+    const deleteComment = async (postId: string, commentId: string) => {
+        if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'moderator')) throw new Error("Insufficient permissions.");
+        const post = posts.find(p => p.id === postId);
+        const comment = post?.comments.find(c => c.id === commentId);
+        if (!post || !comment) throw new Error("Comment not found.");
+        const author = users.find(u => u.id === comment.authorId);
+
+        setPosts(prev => prev.map(p => {
+            if (p.id === postId) {
+                return { ...p, comments: p.comments.filter(c => c.id !== commentId) };
+            }
+            return p;
+        }));
+
+        createActivityLog([
+            { type: 'user', id: currentUser.id, text: currentUser.gamertag },
+            { type: 'text', text: ` deleted a comment by ` },
+            { type: 'user', id: comment.authorId, text: author?.gamertag || 'a user' },
+            { type: 'text', text: `.` }
+        ]);
+    };
 
 
-  const value = { currentUser, users, posts, quests, messages, notifications, teams, invites, applications, activityLog, customEmojis, reactionPointReward, login, logout, signUp, addPost, toggleReaction, addComment, claimQuestReward, updateQuestProgress, sendMessage, leaveTeam, toggleFreeAgentStatus, markNotificationAsRead, markAllNotificationsAsRead, updateNotificationSettings, addQuest, updateQuest, deleteQuest, deleteUser, updateUserRole, deletePost, submitFeedback, adjustUserPoints, updateUserProfile, sendInvite, respondToInvite, applyToTeam, respondToApplication, editTeamDetails, transferTeamOwnership, disbandTeam, pinPost, updateProfileBanner, updateTeamBanner, addCustomEmoji, deleteCustomEmoji, updateProfileVisibility };
+  const value = { currentUser, users, posts, quests, messages, notifications, teams, invites, applications, activityLog, customEmojis, reactionPointReward, login, logout, signUp, addPost, toggleReaction, addComment, claimQuestReward, updateQuestProgress, sendMessage, leaveTeam, toggleFreeAgentStatus, markNotificationAsRead, markAllNotificationsAsRead, updateNotificationSettings, addQuest, updateQuest, deleteQuest, deleteUser, updateUserRole, deletePost, submitFeedback, adjustUserPoints, updateUserProfile, sendInvite, respondToInvite, applyToTeam, respondToApplication, editTeamDetails, transferTeamOwnership, disbandTeam, pinPost, updateProfileBanner, updateTeamBanner, addCustomEmoji, deleteCustomEmoji, updateProfileVisibility, timeoutUser, deleteComment };
 
   return (
     <AuthContext.Provider value={value}>
