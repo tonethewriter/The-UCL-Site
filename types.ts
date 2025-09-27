@@ -53,6 +53,7 @@ export interface User {
   youtube?: string;
   profileVisibility?: ProfileVisibility;
   timeoutUntil?: string; // ISO string for when the timeout expires
+  badges?: string[];
 }
 
 export interface Reaction {
@@ -185,6 +186,7 @@ export interface AuthContextType {
   feedback: Feedback[];
   reactionPointReward: number;
   isWallPostingDisabled: boolean;
+  postOfTheWeekId: string | null;
   login: (identifier: string, pin: string) => Promise<void>;
   logout: () => void;
   signUp: (gamertag: string, email: string, pin:string, role: UserRole, teamName?: string) => Promise<void>;

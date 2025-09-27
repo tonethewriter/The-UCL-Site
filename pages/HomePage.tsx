@@ -4,14 +4,14 @@ import { PostForm } from '../components/PostForm';
 import { PostCard } from '../components/PostCard';
 import { Post } from '../types';
 import { ConfirmationModal } from '../components/ConfirmationModal';
-import { TrashIcon } from '../constants';
+import { TrashIcon, TrophyIcon } from '../constants';
 import { TwitterFeed } from '../components/TwitterFeed';
 
 const POSTS_PER_PAGE = 10;
 type SortByType = 'newest' | 'oldest' | 'mostReactions';
 
 export const HomePage: React.FC = () => {
-    const { currentUser, posts, users, isWallPostingDisabled, toggleWallPosting, deleteAllPublicPosts } = useAuth();
+    const { currentUser, posts, users, isWallPostingDisabled, toggleWallPosting, deleteAllPublicPosts, postOfTheWeekId } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState<SortByType>('newest');
     const [displayedPosts, setDisplayedPosts] = useState<Post[]>([]);
@@ -20,6 +20,14 @@ export const HomePage: React.FC = () => {
     const [hasMore, setHasMore] = useState(true);
     const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false);
     
+    const postOfTheWeek = useMemo(() => {
+        if (!postOfTheWeekId) return null;
+        const post = posts.find(p => p.id === postOfTheWeekId);
+        if (!post) return null;
+        const author = users.find(u => u.id === post.authorId);
+        return { post, author };
+    }, [postOfTheWeekId, posts, users]);
+
     const sortedAndFilteredPosts = useMemo(() => {
         let filtered = posts.filter(p => !p.privateTeamId);
 
@@ -97,6 +105,17 @@ export const HomePage: React.FC = () => {
         <div className="max-w-7xl mx-auto py-6 md:py-8 px-4">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <main className="lg:col-span-2">
+                    {postOfTheWeek && (
+                        <div className="mb-8 p-4 bg-gradient-to-tr from-yellow-800/20 via-brand-surface to-yellow-800/20 border-2 border-yellow-400/50 rounded-lg shadow-2xl">
+                            <h2 className="text-2xl font-bold text-yellow-300 mb-4 text-center flex items-center justify-center gap-2">
+                                <TrophyIcon className="w-6 h-6"/>
+                                Post of the Week
+                                <TrophyIcon className="w-6 h-6"/>
+                            </h2>
+                            <PostCard post={postOfTheWeek.post} author={postOfTheWeek.author} />
+                        </div>
+                    )}
+
                     <h1 className="text-4xl md:text-5xl font-bold text-center mb-4 text-brand-accent tracking-wider">UCL Wall</h1>
 
                     {currentUser?.role === 'admin' && (

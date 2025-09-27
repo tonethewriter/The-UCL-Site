@@ -3,7 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { Navigate, Link } from 'react-router-dom';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { Invite, Application } from '../types';
-import { EnvelopeIcon, TrashIcon, TwitterIcon, TwitchIcon, YouTubeIcon, ShimmeringGamertag } from '../constants';
+import { EnvelopeIcon, TrashIcon, TwitterIcon, TwitchIcon, YouTubeIcon, ShimmeringGamertag, FounderBadgeIcon } from '../constants';
 import { fileToBase64 } from '../constants';
 
 const StatCard: React.FC<{ label: string; value: string | number; icon?: React.ReactNode }> = ({ label, value, icon }) => (
@@ -416,6 +416,12 @@ export const ProfilePage: React.FC = () => {
                         <div className="bg-black/30 px-3 py-1 rounded-full text-sm text-brand-text"><strong>Role:</strong> {roleDisplayMap[currentUser.role]}</div>
                          {currentUser.isModerator && (
                             <div className="bg-blue-600/20 text-blue-300 px-3 py-1 rounded-full text-sm font-semibold">Moderator</div>
+                        )}
+                        {currentUser.badges?.includes('Site Founder') && (
+                            <div className="bg-yellow-600/20 text-yellow-300 px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1.5">
+                                <FounderBadgeIcon className="w-4 h-4" />
+                                Site Founder
+                            </div>
                         )}
                         {team && (<div className="bg-black/30 px-3 py-1 rounded-full text-sm text-brand-text"><strong>Team:</strong> <Link to={`/teams/${team.id}`} className="font-semibold hover:underline">{team.name}</Link></div>)}
                         <div className="bg-black/30 px-3 py-1 rounded-full text-sm text-brand-text"><strong>UCL Points:</strong> <span className="text-brand-accent">{currentUser.uclPoints.toLocaleString()}</span></div>

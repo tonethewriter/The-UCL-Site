@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { MessageIcon, TwitterIcon, TwitchIcon, YouTubeIcon, ShimmeringGamertag } from '../constants';
+import { MessageIcon, TwitterIcon, TwitchIcon, YouTubeIcon, ShimmeringGamertag, FounderBadgeIcon } from '../constants';
 import { PostCard } from '../components/PostCard';
 import { TimeoutUserModal } from '../components/TimeoutUserModal';
 import { User } from '../types';
@@ -149,6 +149,12 @@ export const UserProfilePage: React.FC = () => {
                             <div className="bg-black/30 px-3 py-1 rounded-full text-sm text-brand-text"><strong>Role:</strong> {roleDisplayMap[user.role]}</div>
                              {user.isModerator && (
                                 <div className="bg-blue-600/20 text-blue-300 px-3 py-1 rounded-full text-sm font-semibold">Moderator</div>
+                            )}
+                            {user.badges?.includes('Site Founder') && (
+                                <div className="bg-yellow-600/20 text-yellow-300 px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1.5">
+                                    <FounderBadgeIcon className="w-4 h-4" />
+                                    Site Founder
+                                </div>
                             )}
                             {team && showTeam && (<div className="bg-black/30 px-3 py-1 rounded-full text-sm text-brand-text"><strong>Team:</strong> <Link to={`/teams/${team.id}`} className="font-semibold hover:underline">{team.name}</Link></div>)}
                             {user.isFreeAgent && (<div className="bg-yellow-600/20 text-yellow-300 px-3 py-1 rounded-full text-sm font-semibold">Free Agent</div>)}

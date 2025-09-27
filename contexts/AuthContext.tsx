@@ -33,16 +33,16 @@ const defaultVisibilitySettings: ProfileVisibility = {
 
 const initialUsers: User[] = [
   // Old users
-  { id: '1', gamertag: 'Admin', email: 'admin@ucl.com', pin: '1234', role: 'admin', uclPoints: 1500, profilePicture: 'https://i.pravatar.cc/150?u=Admin', profileBanner: 'https://placehold.co/1200x400/166534/4ade80?text=Admin+HQ', notificationSettings: defaultNotificationSettings, createdAt: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 24 * 30).toISOString(), profileVisibility: defaultVisibilitySettings },
-  { id: '4', gamertag: 'Viper', email: 'viper@ucl.com', pin: '1234', role: 'team_owner_plus', teamId: 't2', uclPoints: 1100, profilePicture: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZnejRzZTNkcnNmMjB4N2ZtN2Y0cHJqZm5tYW51NWYzcGZseG8zayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/f4V2mqb6YE50I/giphy.gif', profileBanner: 'https://placehold.co/1200x400/8b5cf6/ffffff?text=Viper', pinnedPostId: 'p3', notificationSettings: defaultNotificationSettings, twitter: 'https://twitter.com/example', createdAt: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 24 * 10).toISOString(), profileVisibility: defaultVisibilitySettings },
-  { id: '6', gamertag: 'Moderator', email: 'coowner@ucl.com', pin: '1234', role: 'player_plus', isModerator: true, teamId: 't2', uclPoints: 900, profilePicture: 'https://i.pravatar.cc/150?u=6', notificationSettings: defaultNotificationSettings, createdAt: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 24 * 5).toISOString(), profileVisibility: defaultVisibilitySettings },
-  { id: '7', gamertag: 'Shadow', email: 'shadow@ucl.com', pin: '1234', role: 'team_owner', teamId: 't1', uclPoints: 1000, profilePicture: 'https://i.pravatar.cc/150?u=7', notificationSettings: defaultNotificationSettings, createdAt: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 24 * 15).toISOString(), profileVisibility: defaultVisibilitySettings },
+  { id: '1', gamertag: 'Admin', email: 'admin@ucl.com', pin: '1234', role: 'admin', uclPoints: 1500, profilePicture: 'https://i.pravatar.cc/150?u=Admin', profileBanner: 'https://placehold.co/1200x400/166534/4ade80?text=Admin+HQ', notificationSettings: defaultNotificationSettings, createdAt: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 24 * 30).toISOString(), profileVisibility: defaultVisibilitySettings, badges: ['Site Founder'] },
+  { id: '4', gamertag: 'Viper', email: 'viper@ucl.com', pin: '1234', role: 'team_owner_plus', teamId: 't2', uclPoints: 1100, profilePicture: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZnejRzZTNkcnNmMjB4N2ZtN2Y0cHJqZm5tYW51NWYzcGZseG8zayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/f4V2mqb6YE50I/giphy.gif', profileBanner: 'https://placehold.co/1200x400/8b5cf6/ffffff?text=Viper', pinnedPostId: 'p3', notificationSettings: defaultNotificationSettings, twitter: 'https://twitter.com/example', createdAt: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 24 * 10).toISOString(), profileVisibility: defaultVisibilitySettings, badges: ['Site Founder'] },
+  { id: '6', gamertag: 'Moderator', email: 'coowner@ucl.com', pin: '1234', role: 'player_plus', isModerator: true, teamId: 't2', uclPoints: 900, profilePicture: 'https://i.pravatar.cc/150?u=6', notificationSettings: defaultNotificationSettings, createdAt: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 24 * 5).toISOString(), profileVisibility: defaultVisibilitySettings, badges: ['Site Founder'] },
+  { id: '7', gamertag: 'Shadow', email: 'shadow@ucl.com', pin: '1234', role: 'team_owner', teamId: 't1', uclPoints: 1000, profilePicture: 'https://i.pravatar.cc/150?u=7', notificationSettings: defaultNotificationSettings, createdAt: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 24 * 15).toISOString(), profileVisibility: defaultVisibilitySettings, badges: ['Site Founder'] },
   
   // Recent users (relative to MOCK_DATE)
-  { id: '2', gamertag: 'Sniper', email: 'sniper@ucl.com', pin: '1234', role: 'player_plus', teamId: 't1', uclPoints: 850, profilePicture: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdzg1cjN1eDFwbWE5bGl6cjJ0YjU4NHo5M2V0ZGN0YmY5eGh0ZTM1dSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/lv6K2844D2k2Q/giphy.gif', profileBanner: 'https://placehold.co/1200x400/3b82f6/ffffff?text=Sniper', notificationSettings: defaultNotificationSettings, twitch: 'https://www.twitch.tv/example', youtube: 'https://www.youtube.com/example', createdAt: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 12).toISOString(), profileVisibility: defaultVisibilitySettings },
-  { id: '3', gamertag: 'Ghost', email: 'ghost@ucl.com', pin: '1234', role: 'player', teamId: 't1', uclPoints: 320, profilePicture: 'https://i.pravatar.cc/150?u=3', notificationSettings: defaultNotificationSettings, createdAt: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 24).toISOString(), profileVisibility: defaultVisibilitySettings },
-  { id: '5', gamertag: 'Rogue', email: 'rogue@ucl.com', pin: '1234', role: 'player', uclPoints: 450, profilePicture: 'https://i.pravatar.cc/150?u=5', isFreeAgent: true, notificationSettings: defaultNotificationSettings, createdAt: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 40).toISOString(), profileVisibility: defaultVisibilitySettings },
-  { id: '8', gamertag: 'Blade', email: 'blade@ucl.com', pin: '1234', role: 'player', uclPoints: 200, profilePicture: 'https://i.pravatar.cc/150?u=8', isFreeAgent: true, notificationSettings: defaultNotificationSettings, createdAt: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 60).toISOString(), profileVisibility: defaultVisibilitySettings }, // > 48h
+  { id: '2', gamertag: 'Sniper', email: 'sniper@ucl.com', pin: '1234', role: 'player_plus', teamId: 't1', uclPoints: 850, profilePicture: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdzg1cjN1eDFwbWE5bGl6cjJ0YjU4NHo5M2V0ZGN0YmY5eGh0ZTM1dSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/lv6K2844D2k2Q/giphy.gif', profileBanner: 'https://placehold.co/1200x400/3b82f6/ffffff?text=Sniper', notificationSettings: defaultNotificationSettings, twitch: 'https://www.twitch.tv/example', youtube: 'https://www.youtube.com/example', createdAt: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 12).toISOString(), profileVisibility: defaultVisibilitySettings, badges: ['Site Founder'] },
+  { id: '3', gamertag: 'Ghost', email: 'ghost@ucl.com', pin: '1234', role: 'player', teamId: 't1', uclPoints: 320, profilePicture: 'https://i.pravatar.cc/150?u=3', notificationSettings: defaultNotificationSettings, createdAt: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 24).toISOString(), profileVisibility: defaultVisibilitySettings, badges: ['Site Founder'] },
+  { id: '5', gamertag: 'Rogue', email: 'rogue@ucl.com', pin: '1234', role: 'player', uclPoints: 450, profilePicture: 'https://i.pravatar.cc/150?u=5', isFreeAgent: true, notificationSettings: defaultNotificationSettings, createdAt: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 40).toISOString(), profileVisibility: defaultVisibilitySettings, badges: ['Site Founder'] },
+  { id: '8', gamertag: 'Blade', email: 'blade@ucl.com', pin: '1234', role: 'player', uclPoints: 200, profilePicture: 'https://i.pravatar.cc/150?u=8', isFreeAgent: true, notificationSettings: defaultNotificationSettings, createdAt: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 60).toISOString(), profileVisibility: defaultVisibilitySettings, badges: ['Site Founder'] },
 ];
 
 const initialTeams: Team[] = [
@@ -169,6 +169,7 @@ export interface AuthContextType {
   feedback: Feedback[];
   reactionPointReward: number;
   isWallPostingDisabled: boolean;
+  postOfTheWeekId: string | null;
   login: (identifier: string, pin: string) => Promise<void>;
   logout: () => void;
   signUp: (gamertag: string, email: string, pin:string, role: UserRole, teamName?: string) => Promise<void>;
@@ -258,6 +259,7 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
   const [customEmojis, setCustomEmojis] = useState<CustomEmoji[]>(() => loadFromLocalStorage('ucl_customEmojis', initialCustomEmojis));
   const [feedback, setFeedback] = useState<Feedback[]>(() => loadFromLocalStorage('ucl_feedback', initialFeedback));
   const [isWallPostingDisabled, setIsWallPostingDisabled] = useState<boolean>(() => loadFromLocalStorage('ucl_wall_posting_disabled', false));
+  const [postOfTheWeekId, setPostOfTheWeekId] = useState<string | null>(() => loadFromLocalStorage('ucl_potw_id', null));
   
   const reactionPointReward = 5;
 
@@ -275,6 +277,7 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
   useEffect(() => { saveToLocalStorage('ucl_customEmojis', customEmojis); }, [customEmojis]);
   useEffect(() => { saveToLocalStorage('ucl_feedback', feedback); }, [feedback]);
   useEffect(() => { saveToLocalStorage('ucl_wall_posting_disabled', isWallPostingDisabled); }, [isWallPostingDisabled]);
+  useEffect(() => { saveToLocalStorage('ucl_potw_id', postOfTheWeekId); }, [postOfTheWeekId]);
 
   // This effect synchronizes the currentUser state with the master 'users' list.
   // This is crucial for ensuring the logged-in user's data is always up-to-date
@@ -302,6 +305,71 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
         localStorage.removeItem('ucl_user');
     }
   }, [currentUser]);
+
+  // --- AUTOMATIONS ---
+    useEffect(() => {
+        const runWeeklyAutomations = () => {
+            console.log('Running weekly automations...');
+            
+            // --- Post of the Week Logic ---
+            const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+            const recentPublicPosts = posts.filter(p => !p.privateTeamId && new Date(p.timestamp) >= oneWeekAgo);
+            
+            if (recentPublicPosts.length > 0) {
+                const topPost = recentPublicPosts.reduce((top, current) => {
+                    const topReactions = top.reactions.reduce((sum, r) => sum + r.users.length, 0);
+                    const currentReactions = current.reactions.reduce((sum, r) => sum + r.users.length, 0);
+                    if (currentReactions > topReactions) return current;
+                    if (currentReactions === topReactions) return new Date(current.timestamp) > new Date(top.timestamp) ? current : top;
+                    return top;
+                });
+
+                if (topPost && topPost.reactions.reduce((s, r) => s + r.users.length, 0) > 0) {
+                    setPostOfTheWeekId(topPost.id);
+                    const author = users.find(u => u.id === topPost.authorId);
+                    if (author) {
+                        setUsers(prevUsers => prevUsers.map(u => u.id === author.id ? { ...u, uclPoints: u.uclPoints + 100 } : u));
+                        createActivityLog([
+                            { type: 'user', id: topPost.authorId, text: author.gamertag },
+                            { type: 'text', text: ' was awarded Post of the Week and earned 100 UCL Points!' }
+                        ]);
+                    }
+                }
+            }
+
+            // --- Weekly Quest Generation Logic ---
+            setQuests(prev => {
+                const nonWeeklyQuests = prev.filter(q => !q.title.startsWith('Weekly:'));
+                const newWeeklyQuest: Quest = {
+                    id: `wq-${Date.now()}`,
+                    title: 'Weekly: Community Contributor',
+                    description: 'Comment on 3 different public posts this week.',
+                    prize: '50 UCL Points',
+                    status: 'incomplete',
+                    claimedBy: [],
+                    target: 3,
+                    progress: 0,
+                };
+                return [newWeeklyQuest, ...nonWeeklyQuests];
+            });
+        };
+
+        const lastCheckString = localStorage.getItem('ucl_last_weekly_check');
+        const lastCheck = lastCheckString ? new Date(lastCheckString) : new Date(0);
+        const now = new Date();
+        
+        // Run on Sunday if it hasn't run this week
+        if (now.getDay() === 0) {
+            const lastSunday = new Date(now);
+            lastSunday.setDate(now.getDate() - now.getDay());
+            lastSunday.setHours(0, 0, 0, 0);
+
+            if (lastCheck < lastSunday) {
+                runWeeklyAutomations();
+                localStorage.setItem('ucl_last_weekly_check', now.toISOString());
+            }
+        }
+    }, []); // Run only on initial app mount
 
   
   const createActivityLog = (entities: ActivityLogEntity[]) => {
@@ -371,6 +439,9 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
     if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
         throw new Error('Email is already registered.');
     }
+
+    const isFounder = users.length < 20;
+
     const newUser: User = {
         id: String(Date.now()),
         gamertag,
@@ -382,6 +453,7 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
         notificationSettings: defaultNotificationSettings,
         profileVisibility: defaultVisibilitySettings,
         createdAt: new Date().toISOString(),
+        badges: isFounder ? ['Site Founder'] : [],
     };
 
     const needsTeamName = role === 'team_owner' || role === 'team_owner_plus' || role === 'co_owner';
@@ -404,6 +476,10 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
     setCurrentUser(newUser);
     createNotification(newUser.id, 'welcome', 'Welcome to the United Clan League! Check out the quests to get started.', '/quests');
     createActivityLog([{ type: 'user', id: newUser.id, text: gamertag }, { type: 'text', text: ' has registered as a new user.' }]);
+    
+    if (isFounder) {
+        createActivityLog([{ type: 'user', id: newUser.id, text: gamertag }, { type: 'text', text: ' has earned the Site Founder badge!' }]);
+    }
   };
 
   const addPost = (content: string, imageUrl?: string, privateTeamId?: string) => {
@@ -967,7 +1043,7 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
     };
 
 
-  const value = { currentUser, users, posts, quests, messages, notifications, teams, invites, applications, activityLog, customEmojis, feedback, reactionPointReward, isWallPostingDisabled, login, logout, signUp, addPost, toggleReaction, addComment, claimQuestReward, updateQuestProgress, sendMessage, leaveTeam, toggleFreeAgentStatus, markNotificationAsRead, markAllNotificationsAsRead, updateNotificationSettings, addQuest, updateQuest, deleteQuest, deleteUser, updateUserRole, deletePost, deleteAllPublicPosts, submitFeedback, updateFeedbackStatus, adjustUserPoints, updateUserProfile, updateProfilePicture, sendInvite, respondToInvite, applyToTeam, respondToApplication, editTeamDetails, transferTeamOwnership, disbandTeam, pinPost, updateProfileBanner, updateTeamBanner, addCustomEmoji, deleteCustomEmoji, updateProfileVisibility, timeoutUser, deleteComment, toggleWallPosting, toggleModeratorStatus, sendMassCommunication };
+  const value = { currentUser, users, posts, quests, messages, notifications, teams, invites, applications, activityLog, customEmojis, feedback, reactionPointReward, isWallPostingDisabled, postOfTheWeekId, login, logout, signUp, addPost, toggleReaction, addComment, claimQuestReward, updateQuestProgress, sendMessage, leaveTeam, toggleFreeAgentStatus, markNotificationAsRead, markAllNotificationsAsRead, updateNotificationSettings, addQuest, updateQuest, deleteQuest, deleteUser, updateUserRole, deletePost, deleteAllPublicPosts, submitFeedback, updateFeedbackStatus, adjustUserPoints, updateUserProfile, updateProfilePicture, sendInvite, respondToInvite, applyToTeam, respondToApplication, editTeamDetails, transferTeamOwnership, disbandTeam, pinPost, updateProfileBanner, updateTeamBanner, addCustomEmoji, deleteCustomEmoji, updateProfileVisibility, timeoutUser, deleteComment, toggleWallPosting, toggleModeratorStatus, sendMassCommunication };
 
   // FIX: Corrected a typo from `Auth.Provider` to `AuthContext.Provider` to fix a 'Cannot find name' error.
   return (
