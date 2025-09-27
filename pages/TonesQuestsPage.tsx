@@ -66,16 +66,19 @@ const QuestCard: React.FC<{ quest: Quest }> = ({ quest }) => {
                         <span className="text-sm font-semibold text-brand-text-muted">Progress</span>
                         <span className="text-sm font-bold text-brand-accent">{quest.progress} / {quest.target}</span>
                     </div>
-                    <div className="w-full bg-black/50 rounded-full h-2.5 border border-brand-border">
-                        <div className="bg-brand-accent h-2 rounded-full transition-all duration-500" style={{ width: `${progressPercentage}%` }}></div>
+                    <div className="w-full bg-black/50 rounded-full h-3 border border-brand-border overflow-hidden" role="progressbar" aria-valuenow={progressPercentage} aria-valuemin={0} aria-valuemax={100} aria-label={`Quest progress: ${quest.progress} of ${quest.target}`}>
+                        <div 
+                            className="bg-gradient-to-r from-green-500 to-brand-accent h-full rounded-full transition-all duration-500" 
+                            style={{ width: `${progressPercentage}%` }}
+                        ></div>
                     </div>
                     {quest.status !== 'completed' && currentUser && (
-                      <div className="text-right mt-2">
+                        <div className="text-right mt-2">
                         <button onClick={() => updateQuestProgress(quest.id, 1)} className="text-xs bg-brand-border hover:bg-brand-interactive text-white font-semibold py-1 px-3 rounded-md transition-colors">
                             +1 Progress (Sim)
                         </button>
-                      </div>
-                  )}
+                        </div>
+                    )}
                 </div>
             )}
 

@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { RoleBadge } from '../components/RoleBadge';
 import { Application, User } from '../types';
 import { PostForm } from '../components/PostForm';
 import { PostCard } from '../components/PostCard';
+import { fileToBase64 } from '../constants';
 
 const RosterMember: React.FC<{ user: User }> = ({ user }) => (
     <Link to={`/users/${user.id}`} className="flex items-center gap-4 bg-black/20 p-3 rounded-lg hover:bg-black/40 transition-colors">
@@ -42,6 +43,7 @@ const ApplicationManager: React.FC<{ application: Application }> = ({ applicatio
 export const TeamPage: React.FC = () => {
     const { teamId } = useParams<{ teamId: string }>();
     const { currentUser, teams, users, applications, posts, applyToTeam, updateTeamBanner } = useAuth();
+    const bannerInputRef = useRef<HTMLInputElement>(null);
 
     const team = teams.find(t => t.id === teamId);
     const teamMembers = users.filter(u => u.teamId === teamId);
@@ -67,12 +69,12 @@ export const TeamPage: React.FC = () => {
         }
     };
     
-    const handleEditBanner = async () => {
-        if (!team || !isPlusOwner) return;
-        const newUrl = prompt("Enter new team banner URL:", team.bannerUrl || '');
-        if (newUrl !== null) {
+    const handleBannerFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file && team) {
             try {
-                await updateTeamBanner(team.id, newUrl);
+                const base64 = await fileToBase64(file);
+                await updateTeamBanner(team.id, base64);
             } catch (err: any) {
                 alert(err.message);
             }
@@ -112,9 +114,18 @@ export const TeamPage: React.FC = () => {
                                 </button>
                                 )}
                                 {isOwner && owner.role === 'team_owner_plus' && (
-                                <button onClick={handleEditBanner} className="text-xs bg-brand-accent/80 hover:bg-brand-accent text-black font-semibold py-1 px-3 rounded-md transition-colors">
-                                    Edit Banner
-                                </button>
+                                <>
+                                    <input
+                                        type="file"
+                                        ref={bannerInputRef}
+                                        onChange={handleBannerFileChange}
+                                        className="hidden"
+                                        accept="image/png, image/jpeg, image/gif"
+                                    />
+                                    <button onClick={() => bannerInputRef.current?.click()} className="text-xs bg-brand-accent/80 hover:bg-brand-accent text-black font-semibold py-1 px-3 rounded-md transition-colors">
+                                        Edit Banner
+                                    </button>
+                                </>
                                 )}
                              </div>
                         </div>

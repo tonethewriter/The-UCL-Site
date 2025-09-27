@@ -1,19 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { fileToBase64, XIcon, ImageIcon } from '../constants';
 
 export const PostForm: React.FC<{ privateTeamId?: string }> = ({ privateTeamId }) => {
     const [content, setContent] = useState('');
-    const [imageUrl, setImageUrl] = useState('');
+    const [imageDataUrl, setImageDataUrl] = useState('');
     const { currentUser, addPost } = useAuth();
+    const fileInputRef = useRef<HTMLInputElement>(null);
     
     const isPlusMember = currentUser?.role.includes('_plus') || currentUser?.role === 'admin';
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (content.trim()) {
-            addPost(content, imageUrl, privateTeamId);
+            addPost(content, imageDataUrl, privateTeamId);
             setContent('');
-            setImageUrl('');
+            setImageDataUrl('');
+        }
+    };
+    
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const base64 = await fileToBase64(file);
+            setImageDataUrl(base64);
         }
     };
     
@@ -44,12 +54,33 @@ export const PostForm: React.FC<{ privateTeamId?: string }> = ({ privateTeamId }
                  {isPlusMember && (
                     <div className="mt-3">
                         <input
-                            type="url"
-                            className="w-full bg-black/30 text-brand-text border border-brand-border rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-brand-accent transition-shadow placeholder-brand-text-muted/50"
-                            placeholder="Image URL (Plus Feature)"
-                            value={imageUrl}
-                            onChange={(e) => setImageUrl(e.target.value)}
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleFileChange}
+                            className="hidden"
+                            accept="image/png, image/jpeg, image/gif"
                         />
+                        {!imageDataUrl ? (
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="w-full flex items-center justify-center gap-2 bg-black/30 text-brand-text-muted border border-brand-border rounded-md p-3 hover:bg-brand-border/50 transition-colors"
+                            >
+                                <ImageIcon className="w-5 h-5" />
+                                <span>Upload Image (Plus Feature)</span>
+                            </button>
+                        ) : (
+                            <div className="relative">
+                                <img src={imageDataUrl} alt="Preview" className="w-full h-auto max-h-72 object-cover rounded-md" />
+                                <button
+                                    type="button"
+                                    onClick={() => setImageDataUrl('')}
+                                    className="absolute top-2 right-2 bg-black/50 rounded-full p-1.5 text-white hover:bg-black/80"
+                                >
+                                    <XIcon className="w-5 h-5" />
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
                 <div className="flex justify-end mt-3">

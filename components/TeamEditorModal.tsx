@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Team } from '../types';
+import { fileToBase64 } from '../constants';
 
 interface TeamEditorModalProps {
     isOpen: boolean;
@@ -12,6 +13,7 @@ export const TeamEditorModal: React.FC<TeamEditorModalProps> = ({ isOpen, onClos
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [logoUrl, setLogoUrl] = useState('');
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (team) {
@@ -28,6 +30,14 @@ export const TeamEditorModal: React.FC<TeamEditorModalProps> = ({ isOpen, onClos
         onSave({ name, description, logoUrl });
     };
 
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const base64 = await fileToBase64(file);
+            setLogoUrl(base64);
+        }
+    };
+
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4 backdrop-blur-sm" onClick={onClose}>
             <div className="bg-brand-surface border border-brand-border/50 rounded-lg shadow-xl p-6 w-full max-w-lg" onClick={e => e.stopPropagation()}>
@@ -42,8 +52,24 @@ export const TeamEditorModal: React.FC<TeamEditorModalProps> = ({ isOpen, onClos
                         <textarea id="team-description" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-black/30 text-white border border-brand-border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-brand-accent transition" rows={3} required />
                     </div>
                     <div>
-                        <label className="text-sm font-bold text-brand-text-muted block mb-2" htmlFor="team-logo">Logo URL</label>
-                        <input type="url" id="team-logo" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} className="w-full bg-black/30 text-white border border-brand-border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-brand-accent transition" required />
+                        <label className="text-sm font-bold text-brand-text-muted block mb-2">Logo</label>
+                        <div className="mt-2 flex items-center gap-4">
+                            <img src={logoUrl} alt="Team Logo Preview" className="w-16 h-16 rounded-full bg-brand-border object-cover" />
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleFileChange}
+                                className="hidden"
+                                accept="image/png, image/jpeg, image/gif"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="bg-brand-border hover:bg-brand-interactive/50 text-white font-bold py-2 px-4 rounded-md transition-colors"
+                            >
+                                Upload New Logo
+                            </button>
+                        </div>
                     </div>
                     <div className="flex justify-end space-x-4 pt-4">
                          <button type="button" onClick={onClose} className="bg-brand-border hover:bg-brand-interactive/50 text-white font-bold py-2 px-6 rounded-md transition-colors">Cancel</button>

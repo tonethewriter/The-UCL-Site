@@ -1,10 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { Navigate, Link } from 'react-router-dom';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { Invite, Application, ProfileVisibility } from '../types';
 import { EnvelopeIcon, TrashIcon } from '../constants';
 import { PostCard } from '../components/PostCard';
+import { fileToBase64 } from '../constants';
 
 
 const roleDisplayMap = {
@@ -96,6 +97,8 @@ const SettingsToggle: React.FC<{ label: string; description: string; isChecked: 
 
 export const ProfilePage: React.FC = () => {
     const { currentUser, teams, posts, quests, invites, applications, customEmojis, leaveTeam, toggleFreeAgentStatus, updateUserProfile, updateProfileBanner, addCustomEmoji, deleteCustomEmoji, updateProfileVisibility, updateProfilePicture } = useAuth();
+    const profilePicInputRef = useRef<HTMLInputElement>(null);
+    const bannerInputRef = useRef<HTMLInputElement>(null);
     
     const [gamertag, setGamertag] = useState(currentUser?.gamertag || '');
     const [email, setEmail] = useState(currentUser?.email || '');
@@ -132,7 +135,7 @@ export const ProfilePage: React.FC = () => {
                 twitch: twitch.trim() ? twitch : undefined,
                 youtube: youtube.trim() ? youtube : undefined,
             });
-             if (isPlusMember) {
+             if (isPlusMember && bannerUrl !== currentUser.profileBanner) {
                 await updateProfileBanner(bannerUrl.trim());
             }
             setUpdateMessage('Profile updated successfully!');
@@ -175,13 +178,26 @@ export const ProfilePage: React.FC = () => {
         }
     };
 
-    const handleChangePicture = async () => {
-        const newUrl = prompt("Enter new profile picture URL:", currentUser.profilePicture || '');
-        if (newUrl !== null) { 
+    const handleChangePicture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
             try {
-                await updateProfilePicture(newUrl);
+                const base64 = await fileToBase64(file);
+                await updateProfilePicture(base64);
             } catch (err: any) {
                 alert(err.message);
+            }
+        }
+    };
+
+    const handleBannerFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            try {
+                const base64 = await fileToBase64(file);
+                setBannerUrl(base64);
+            } catch (err) {
+                console.error("Failed to read banner file", err);
             }
         }
     };
@@ -243,16 +259,35 @@ export const ProfilePage: React.FC = () => {
     const CustomEmojiManager = () => {
         const myEmojis = customEmojis.filter(e => e.uploaderId === currentUser.id);
         const [emojiName, setEmojiName] = useState('');
-        const [emojiUrl, setEmojiUrl] = useState('');
+        const [emojiUrl, setEmojiUrl] = useState(''); // This will now hold the data URL
         const [emojiError, setEmojiError] = useState('');
+        const emojiFileInputRef = useRef<HTMLInputElement>(null);
+
+        const handleEmojiFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+            const file = e.target.files?.[0];
+            if (file) {
+                if (file.size > 128 * 1024) { // 128KB limit for emojis
+                    setEmojiError('Emoji image must be smaller than 128KB.');
+                    return;
+                }
+                const base64 = await fileToBase64(file);
+                setEmojiUrl(base64);
+                setEmojiError('');
+            }
+        };
 
         const handleAddEmoji = async (e: React.FormEvent) => {
             e.preventDefault();
             setEmojiError('');
+            if (!emojiUrl) {
+                setEmojiError('Please upload an emoji image.');
+                return;
+            }
             try {
                 await addCustomEmoji(emojiName, emojiUrl);
                 setEmojiName('');
                 setEmojiUrl('');
+                if (emojiFileInputRef.current) emojiFileInputRef.current.value = '';
             } catch (err: any) {
                 setEmojiError(err.message);
             }
@@ -271,7 +306,7 @@ export const ProfilePage: React.FC = () => {
         return (
             <div className="bg-brand-surface p-6 rounded-xl shadow-lg border border-brand-border/50">
                 <h2 className="text-2xl font-semibold text-brand-accent mb-4">⭐ Custom Emoji Management</h2>
-                <p className="text-sm text-brand-text-muted mb-4">Upload custom emojis for everyone in the league to use. You can upload up to 3.</p>
+                <p className="text-sm text-brand-text-muted mb-4">Upload custom emojis (max 128KB) for everyone to use. You can upload up to 3.</p>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
                     {myEmojis.map(emoji => (
                         <div key={emoji.id} className="bg-black/30 p-2 rounded-lg text-center relative group">
@@ -282,14 +317,27 @@ export const ProfilePage: React.FC = () => {
                             </button>
                         </div>
                     ))}
+                     {emojiUrl && myEmojis.length < 3 && (
+                        <div className="bg-black/30 p-2 rounded-lg text-center relative border border-dashed border-brand-accent">
+                            <img src={emojiUrl} alt="New Emoji Preview" className="w-12 h-12 mx-auto" />
+                            <p className="text-xs text-brand-accent mt-1 truncate">{emojiName || 'preview'}</p>
+                        </div>
+                    )}
                 </div>
                 {myEmojis.length < 3 ? (
                     <form onSubmit={handleAddEmoji} className="space-y-3 pt-4 border-t border-brand-border/50">
                         <h3 className="text-lg font-semibold text-white">Add New Emoji ({myEmojis.length}/3)</h3>
                         {emojiError && <p className="text-sm text-red-400 bg-red-500/10 p-2 rounded-md">{emojiError}</p>}
+                        <input type="file" ref={emojiFileInputRef} onChange={handleEmojiFileChange} className="hidden" accept="image/png, image/gif" />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <input type="text" placeholder=":emoji_name:" value={emojiName} onChange={e => setEmojiName(e.target.value)} className="bg-black/30 text-white border border-brand-border rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-brand-accent transition text-sm" required />
-                            <input type="url" placeholder="Image URL" value={emojiUrl} onChange={e => setEmojiUrl(e.target.value)} className="bg-black/30 text-white border border-brand-border rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-brand-accent transition text-sm" required />
+                            <button
+                                type="button"
+                                onClick={() => emojiFileInputRef.current?.click()}
+                                className="w-full bg-black/30 text-white border border-brand-border rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-brand-accent transition text-sm truncate"
+                            >
+                                {emojiUrl ? 'Image Selected' : 'Upload Image'}
+                            </button>
                         </div>
                         <div className="text-right">
                             <button type="submit" className="bg-brand-interactive hover:bg-green-500 text-black font-bold py-1 px-4 rounded-md text-sm transition-colors">Add Emoji</button>
@@ -362,8 +410,15 @@ export const ProfilePage: React.FC = () => {
                                     {currentUser.gamertag.charAt(0).toUpperCase()}
                                 </div>
                             )}
-                            <button onClick={handleChangePicture} className="mt-4 text-xs bg-brand-interactive/50 hover:bg-brand-interactive text-white font-semibold py-1 px-3 rounded-md transition-colors">
-                                Change Picture
+                             <input
+                                type="file"
+                                ref={profilePicInputRef}
+                                onChange={handleChangePicture}
+                                className="hidden"
+                                accept="image/png, image/jpeg, image/gif"
+                            />
+                            <button onClick={() => profilePicInputRef.current?.click()} className="mt-4 text-xs bg-brand-interactive/50 hover:bg-brand-interactive text-white font-semibold py-1 px-3 rounded-md transition-colors">
+                                Upload Picture
                             </button>
                              {isPlusMember && <p className="text-xs text-brand-accent/80 mt-2">Animated GIFs are supported!</p>}
                             <div className="mt-6 text-left space-y-3">
@@ -411,9 +466,21 @@ export const ProfilePage: React.FC = () => {
                                      <div className="border-b border-brand-border/50 pb-6">
                                         <h3 className="text-lg font-semibold text-brand-accent">Profile Banner (Plus Feature)</h3>
                                         <div>
-                                            <label className="text-sm font-bold text-brand-text-muted block mt-4 mb-2" htmlFor="bannerUrl">Banner Image URL</label>
+                                            <label className="text-sm font-bold text-brand-text-muted block mt-4 mb-2" htmlFor="bannerUrl">Banner Image</label>
                                              <p className="text-xs text-brand-accent/80 mb-2">Animated GIFs are supported!</p>
-                                            <input type="url" id="bannerUrl" value={bannerUrl} onChange={(e) => setBannerUrl(e.target.value)} placeholder="https://example.com/banner.jpg" className="w-full bg-black/30 text-white border border-brand-border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-brand-accent transition" />
+                                             <input
+                                                type="file"
+                                                ref={bannerInputRef}
+                                                onChange={handleBannerFileChange}
+                                                className="hidden"
+                                                accept="image/png, image/jpeg, image/gif"
+                                            />
+                                            <div className="flex items-center gap-4">
+                                                {bannerUrl && <img src={bannerUrl} alt="Banner preview" className="w-24 h-14 rounded object-cover bg-brand-border" />}
+                                                <button type="button" onClick={() => bannerInputRef.current?.click()} className="bg-brand-border hover:bg-brand-interactive/50 text-white font-bold py-2 px-4 rounded-md transition-colors">
+                                                    {bannerUrl ? 'Change Banner' : 'Upload Banner'}
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 )}
