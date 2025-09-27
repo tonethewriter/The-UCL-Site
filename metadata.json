@@ -1,0 +1,5 @@
+{
+  "name": "United Clan League",
+  "description": "A social platform for the United Clan League, featuring a public post feed with emoji reactions, user authentication, and an admin dashboard for site management.",
+  "requestFramePermissions": []
+}
