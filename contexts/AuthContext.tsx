@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import { User, Post, Quest, UserRole, Comment, Message, Notification, NotificationType, NotificationSettings, Team, Invite, Application, InviteStatus } from '../types';
+import { User, Post, Quest, UserRole, Comment, Message, Notification, NotificationType, NotificationSettings, Team, Invite, Application, InviteStatus, ActivityLog } from '../types';
 
 // --- Mock Data (acts as our in-memory database) ---
 const defaultNotificationSettings: NotificationSettings = {
@@ -104,6 +104,12 @@ const initialNotifications: Notification[] = [
     { id: 'n5', userId: '7', type: 'team_application', message: 'Blade has applied to join Alpha Squad.', link: '/teams/t1', isRead: false, timestamp: new Date(Date.now() - 3600 * 1000 * 1).toISOString()},
 ];
 
+const initialActivityLog: ActivityLog[] = [
+    { id: 'al0', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(), message: 'Sniper has registered as a new user.' },
+    { id: 'al1', timestamp: new Date(Date.now() - 3600 * 1000 * 20).toISOString(), message: 'Rogue became a free agent.' },
+    { id: 'al2', timestamp: new Date(Date.now() - 3600 * 1000 * 25).toISOString(), message: 'Blade has registered as a new user.' },
+    { id: 'al3', timestamp: new Date(Date.now() - 3600 * 1000 * 30).toISOString(), message: 'Viper created a new team: Bravo Company.' },
+];
 
 export interface AuthContextType {
   currentUser: User | null;
@@ -115,6 +121,7 @@ export interface AuthContextType {
   teams: Team[];
   invites: Invite[];
   applications: Application[];
+  activityLog: ActivityLog[];
   reactionPointReward: number;
   login: (identifier: string, pin: string) => Promise<void>;
   logout: () => void;
@@ -173,6 +180,7 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
   const [teams, setTeams] = useState<Team[]>(initialTeams);
   const [invites, setInvites] = useState<Invite[]>(initialInvites);
   const [applications, setApplications] = useState<Application[]>(initialApplications);
+  const [activityLog, setActivityLog] = useState<ActivityLog[]>(initialActivityLog);
   
   const reactionPointReward = 5;
 
@@ -186,6 +194,14 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
     }
   }, [currentUser]);
   
+  const createActivityLog = (message: string) => {
+    const newLog: ActivityLog = {
+        id: `al${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        message,
+    };
+    setActivityLog(prev => [newLog, ...prev]);
+  };
   
   const createNotification = (userId: string, type: NotificationType, message: string, link: string) => {
     const user = users.find(u => u.id === userId);
@@ -270,11 +286,13 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
         };
         setTeams(prev => [...prev, newTeam]);
         newUser.teamId = newTeam.id;
+        createActivityLog(`${newUser.gamertag} created a new team: ${teamName}.`);
     }
 
     setUsers(prev => [...prev, newUser]);
     setCurrentUser(newUser);
     createNotification(newUser.id, 'welcome', 'Welcome to the United Clan League! Check out the quests to get started.', '/quests');
+    createActivityLog(`${gamertag} has registered as a new user.`);
   };
 
   const addPost = (content: string) => {
@@ -402,16 +420,20 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
     if (currentUser.role !== 'player' && currentUser.role !== 'player_plus') {
       throw new Error("Only players can leave a team.");
     }
-
+    const team = teams.find(t => t.id === currentUser.teamId);
     const updatedUser = { ...currentUser, teamId: undefined };
     setCurrentUser(updatedUser);
     setUsers(users.map(u => u.id === currentUser.id ? updatedUser : u));
+    if (team) {
+        createActivityLog(`${currentUser.gamertag} left team ${team.name}.`);
+    }
   };
 
   const toggleFreeAgentStatus = async () => {
     if (!currentUser) throw new Error("You are not logged in.");
     
     const isBecomingFreeAgent = !currentUser.isFreeAgent;
+    const team = teams.find(t => t.id === currentUser.teamId);
     
     const updatedUser = { 
         ...currentUser, 
@@ -421,6 +443,16 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
 
     setCurrentUser(updatedUser);
     setUsers(users.map(u => u.id === currentUser.id ? updatedUser : u));
+    
+    if (isBecomingFreeAgent) {
+        if(team) {
+            createActivityLog(`${currentUser.gamertag} left ${team.name} and became a free agent.`);
+        } else {
+            createActivityLog(`${currentUser.gamertag} is now listed as a free agent.`);
+        }
+    } else {
+        createActivityLog(`${currentUser.gamertag} is no longer listed as a free agent.`);
+    }
   };
 
   const markNotificationAsRead = (notificationId: string) => {
@@ -550,10 +582,14 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
         setInvites(prev => prev.map(i => i.id === inviteId ? { ...i, status: response } : i));
 
         if (response === 'accepted') {
+            const team = teams.find(t => t.id === invite.teamId);
             const updatedUser = { ...currentUser, teamId: invite.teamId, isFreeAgent: false };
             setCurrentUser(updatedUser);
             setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
             setApplications(prev => prev.filter(app => app.userId !== currentUser.id)); // Remove other applications
+            if (team) {
+                createActivityLog(`${currentUser.gamertag} joined ${team.name} by accepting an invite.`);
+            }
         }
     };
 
@@ -580,8 +616,12 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
         setApplications(prev => prev.map(a => a.id === applicationId ? { ...a, status: response } : a));
 
         if (response === 'accepted') {
+            const applicant = users.find(u => u.id === app.userId);
             setUsers(prev => prev.map(u => u.id === app.userId ? { ...u, teamId: app.teamId, isFreeAgent: false } : u));
-             createNotification(app.userId, 'application_update', `Your application to ${team.name} has been accepted!`, `/teams/${team.id}`);
+            createNotification(app.userId, 'application_update', `Your application to ${team.name} has been accepted!`, `/teams/${team.id}`);
+            if (applicant) {
+                createActivityLog(`${applicant.gamertag} joined ${team.name} after their application was accepted.`);
+            }
         } else {
             createNotification(app.userId, 'application_update', `Your application to ${team.name} has been declined.`, `/teams`);
         }
@@ -595,11 +635,18 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
     const transferTeamOwnership = async (teamId: string, newOwnerId: string) => {
         const team = teams.find(t => t.id === teamId);
         if (!team) throw new Error("Team not found");
+        const oldOwner = users.find(u => u.id === team.ownerId);
+        const newOwner = users.find(u => u.id === newOwnerId);
+        if(!oldOwner || !newOwner) throw new Error("Owner not found");
         
         setTeams(prev => prev.map(t => t.id === teamId ? { ...t, ownerId: newOwnerId } : t));
+        createActivityLog(`Ownership of ${team.name} was transferred from ${oldOwner.gamertag} to ${newOwner.gamertag}.`);
     };
 
     const disbandTeam = async (teamId: string) => {
+        const teamToDisband = teams.find(t => t.id === teamId);
+        if (!teamToDisband) return;
+
         setTeams(prev => prev.filter(t => t.id !== teamId));
         setUsers(prev => prev.map(u => {
             if (u.teamId === teamId) {
@@ -609,10 +656,11 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
         }));
         setInvites(prev => prev.filter(i => i.teamId !== teamId));
         setApplications(prev => prev.filter(a => a.teamId !== teamId));
+        createActivityLog(`Team ${teamToDisband.name} was disbanded.`);
     };
 
 
-  const value = { currentUser, users, posts, quests, messages, notifications, teams, invites, applications, reactionPointReward, login, logout, signUp, addPost, toggleReaction, addComment, claimQuestReward, updateQuestProgress, sendMessage, leaveTeam, toggleFreeAgentStatus, markNotificationAsRead, markAllNotificationsAsRead, updateNotificationSettings, addQuest, updateQuest, deleteQuest, deleteUser, updateUserRole, deletePost, submitFeedback, adjustUserPoints, updateUserProfile, sendInvite, respondToInvite, applyToTeam, respondToApplication, editTeamDetails, transferTeamOwnership, disbandTeam };
+  const value = { currentUser, users, posts, quests, messages, notifications, teams, invites, applications, activityLog, reactionPointReward, login, logout, signUp, addPost, toggleReaction, addComment, claimQuestReward, updateQuestProgress, sendMessage, leaveTeam, toggleFreeAgentStatus, markNotificationAsRead, markAllNotificationsAsRead, updateNotificationSettings, addQuest, updateQuest, deleteQuest, deleteUser, updateUserRole, deletePost, submitFeedback, adjustUserPoints, updateUserProfile, sendInvite, respondToInvite, applyToTeam, respondToApplication, editTeamDetails, transferTeamOwnership, disbandTeam };
 
   return (
     <AuthContext.Provider value={value}>

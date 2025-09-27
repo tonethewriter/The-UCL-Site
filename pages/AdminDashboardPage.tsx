@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { User, Quest, UserRole, Team } from '../types';
+import { User, Quest, UserRole, Team, Post } from '../types';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { QuestEditorModal } from '../components/QuestEditorModal';
 import { RoleEditorModal } from '../components/RoleEditorModal';
@@ -38,8 +38,24 @@ const UserRow: React.FC<{ user: User; onEditRole: (user: User) => void; onDelete
     </tr>
 );
 
+const timeAgo = (dateString: string): string => {
+    const date = new Date(dateString);
+    const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
+    let interval = seconds / 31536000;
+    if (interval > 1) return Math.floor(interval) + "y ago";
+    interval = seconds / 2592000;
+    if (interval > 1) return Math.floor(interval) + "mo ago";
+    interval = seconds / 86400;
+    if (interval > 1) return Math.floor(interval) + "d ago";
+    interval = seconds / 3600;
+    if (interval > 1) return Math.floor(interval) + "h ago";
+    interval = seconds / 60;
+    if (interval > 1) return Math.floor(interval) + "m ago";
+    return "just now";
+};
+
 export const AdminDashboardPage: React.FC = () => {
-    const { currentUser, users, posts, quests, teams, addQuest, updateQuest, deleteQuest, updateUserRole, deleteUser, adjustUserPoints, editTeamDetails, transferTeamOwnership, disbandTeam } = useAuth();
+    const { currentUser, users, posts, quests, teams, activityLog, addQuest, updateQuest, deleteQuest, updateUserRole, deleteUser, deletePost, adjustUserPoints, editTeamDetails, transferTeamOwnership, disbandTeam } = useAuth();
     
     // Quest state
     const [isQuestModalOpen, setIsQuestModalOpen] = useState(false);
@@ -60,6 +76,10 @@ export const AdminDashboardPage: React.FC = () => {
     const [isDisbandConfirmOpen, setIsDisbandConfirmOpen] = useState(false);
     const [editingTeam, setEditingTeam] = useState<Team | null>(null);
     const [disbandingTeamId, setDisbandingTeamId] = useState<string | null>(null);
+
+    // Post state
+    const [isDeletePostConfirmOpen, setIsDeletePostConfirmOpen] = useState(false);
+    const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
 
     // Quest handlers
     const handleOpenCreateQuestModal = () => { setEditingQuest(null); setIsQuestModalOpen(true); };
@@ -96,6 +116,13 @@ export const AdminDashboardPage: React.FC = () => {
     const handleTransferOwner = async (newOwnerId: string) => { if (!editingTeam) return; await transferTeamOwnership(editingTeam.id, newOwnerId); setIsOwnerTransferOpen(false); };
     const handleConfirmDisband = async () => { if (!disbandingTeamId) return; await disbandTeam(disbandingTeamId); setIsDisbandConfirmOpen(false); }
 
+    // Post handlers
+    const openDeletePostConfirm = (postId: string) => { setDeletingPostId(postId); setIsDeletePostConfirmOpen(true); };
+    const handleConfirmDeletePost = () => { if (deletingPostId) deletePost(deletingPostId); setIsDeletePostConfirmOpen(false); };
+
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const recentUsers = users.filter(user => new Date(user.createdAt) > sevenDaysAgo).sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
     return (
         <>
             <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
@@ -106,87 +133,153 @@ export const AdminDashboardPage: React.FC = () => {
                     <StatCard title="Total Teams" value={teams.length} />
                     <StatCard title="Active Quests" value={quests.filter(q => q.status !== 'completed').length} />
                 </div>
-                <div className="bg-brand-surface p-6 rounded-lg shadow-lg border border-brand-border/30 mb-8">
-                    <h2 className="text-2xl font-semibold text-white mb-4">User Management</h2>
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-brand-border">
-                            <thead className="bg-black/30">
-                                <tr>
-                                    <th scope="col" className="p-4 text-left text-xs font-medium text-brand-text-muted uppercase tracking-wider">Gamertag</th>
-                                    <th scope="col" className="p-4 text-left text-xs font-medium text-brand-text-muted uppercase tracking-wider">Email</th>
-                                    <th scope="col" className="p-4 text-left text-xs font-medium text-brand-text-muted uppercase tracking-wider">Role</th>
-                                    <th scope="col" className="p-4 text-left text-xs font-medium text-brand-text-muted uppercase tracking-wider">UCL Points</th>
-                                    <th scope="col" className="p-4 text-right text-xs font-medium text-brand-text-muted uppercase tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-brand-surface/50 divide-y divide-brand-border/50">
-                                {users.sort((a,b) => a.gamertag.localeCompare(b.gamertag)).map(user => <UserRow key={user.id} user={user} onEditRole={handleOpenEditRoleModal} onDeleteUser={openDeleteUserConfirm} onEditPoints={handleOpenPointsModal} isCurrentUser={currentUser?.id === user.id}/>)}
-                            </tbody>
-                        </table>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                     <div className="bg-brand-surface p-6 rounded-lg shadow-lg border border-brand-border/30">
+                        <h2 className="text-2xl font-semibold text-white mb-4">Recent Registrations</h2>
+                        <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+                            {recentUsers.length > 0 ? recentUsers.map(user => (
+                                <div key={user.id} className="flex items-center justify-between bg-black/20 p-2 rounded-md">
+                                    <div className="flex items-center gap-2">
+                                        <img src={user.profilePicture} alt={user.gamertag} className="w-8 h-8 rounded-full object-cover bg-brand-border" />
+                                        <span className="text-sm font-semibold text-white">{user.gamertag}</span>
+                                    </div>
+                                    <span className="text-xs text-brand-text-muted">{timeAgo(user.createdAt)}</span>
+                                </div>
+                            )) : <p className="text-brand-text-muted text-sm">No new users in the last 7 days.</p>}
+                        </div>
+                    </div>
+                    <div className="bg-brand-surface p-6 rounded-lg shadow-lg border border-brand-border/30">
+                        <h2 className="text-2xl font-semibold text-white mb-4">League Activity Feed</h2>
+                        <div className="max-h-96 overflow-y-auto pr-2 space-y-4">
+                            {activityLog.length > 0 ? activityLog.slice(0, 20).map(log => (
+                                <div key={log.id} className="flex items-start gap-3">
+                                    <div className="mt-1.5 w-2 h-2 bg-brand-border rounded-full flex-shrink-0"></div>
+                                    <div className="flex-1">
+                                        <p className="text-sm text-brand-text">{log.message}</p>
+                                        <p className="text-xs text-brand-text-muted">{timeAgo(log.timestamp)}</p>
+                                    </div>
+                                </div>
+                            )) : <p className="text-brand-text-muted text-sm">No recent activity.</p>}
+                        </div>
                     </div>
                 </div>
-                <div className="bg-brand-surface p-6 rounded-lg shadow-lg border border-brand-border/30 mb-8">
-                    <h2 className="text-2xl font-semibold text-white mb-4">Team Management</h2>
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-brand-border">
-                            <thead className="bg-black/30">
-                                <tr>
-                                    <th scope="col" className="p-4 text-left text-xs font-medium text-brand-text-muted uppercase tracking-wider">Team Name</th>
-                                    <th scope="col" className="p-4 text-left text-xs font-medium text-brand-text-muted uppercase tracking-wider">Owner</th>
-                                    <th scope="col" className="p-4 text-left text-xs font-medium text-brand-text-muted uppercase tracking-wider">Members</th>
-                                    <th scope="col" className="p-4 text-right text-xs font-medium text-brand-text-muted uppercase tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-brand-surface/50 divide-y divide-brand-border/50">
-                                {teams.map(team => {
-                                    const owner = users.find(u => u.id === team.ownerId);
-                                    const memberCount = users.filter(u => u.teamId === team.id).length;
-                                    return (
-                                        <tr key={team.id} className="hover:bg-brand-surface/40">
-                                            <td className="p-4 whitespace-nowrap text-sm font-medium text-white flex items-center gap-3"><img src={team.logoUrl} className="w-8 h-8 rounded-full bg-brand-border" /> {team.name}</td>
-                                            <td className="p-4 whitespace-nowrap text-sm text-brand-text-muted">{owner?.gamertag || 'N/A'}</td>
-                                            <td className="p-4 whitespace-nowrap text-sm text-brand-text-muted">{memberCount}</td>
+
+                <div className="space-y-8">
+                    <div className="bg-brand-surface p-6 rounded-lg shadow-lg border border-brand-border/30">
+                        <h2 className="text-2xl font-semibold text-white mb-4">User Management</h2>
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-brand-border">
+                                <thead className="bg-black/30">
+                                    <tr>
+                                        <th scope="col" className="p-4 text-left text-xs font-medium text-brand-text-muted uppercase tracking-wider">Gamertag</th>
+                                        <th scope="col" className="p-4 text-left text-xs font-medium text-brand-text-muted uppercase tracking-wider">Email</th>
+                                        <th scope="col" className="p-4 text-left text-xs font-medium text-brand-text-muted uppercase tracking-wider">Role</th>
+                                        <th scope="col" className="p-4 text-left text-xs font-medium text-brand-text-muted uppercase tracking-wider">UCL Points</th>
+                                        <th scope="col" className="p-4 text-right text-xs font-medium text-brand-text-muted uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-brand-surface/50 divide-y divide-brand-border/50">
+                                    {users.sort((a,b) => a.gamertag.localeCompare(b.gamertag)).map(user => <UserRow key={user.id} user={user} onEditRole={handleOpenEditRoleModal} onDeleteUser={openDeleteUserConfirm} onEditPoints={handleOpenPointsModal} isCurrentUser={currentUser?.id === user.id}/>)}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div className="bg-brand-surface p-6 rounded-lg shadow-lg border border-brand-border/30">
+                        <h2 className="text-2xl font-semibold text-white mb-4">Team Management</h2>
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-brand-border">
+                                <thead className="bg-black/30">
+                                    <tr>
+                                        <th scope="col" className="p-4 text-left text-xs font-medium text-brand-text-muted uppercase tracking-wider">Team Name</th>
+                                        <th scope="col" className="p-4 text-left text-xs font-medium text-brand-text-muted uppercase tracking-wider">Owner</th>
+                                        <th scope="col" className="p-4 text-left text-xs font-medium text-brand-text-muted uppercase tracking-wider">Members</th>
+                                        <th scope="col" className="p-4 text-right text-xs font-medium text-brand-text-muted uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-brand-surface/50 divide-y divide-brand-border/50">
+                                    {teams.map(team => {
+                                        const owner = users.find(u => u.id === team.ownerId);
+                                        const memberCount = users.filter(u => u.teamId === team.id).length;
+                                        return (
+                                            <tr key={team.id} className="hover:bg-brand-surface/40">
+                                                <td className="p-4 whitespace-nowrap text-sm font-medium text-white flex items-center gap-3"><img src={team.logoUrl} className="w-8 h-8 rounded-full bg-brand-border" /> {team.name}</td>
+                                                <td className="p-4 whitespace-nowrap text-sm text-brand-text-muted">{owner?.gamertag || 'N/A'}</td>
+                                                <td className="p-4 whitespace-nowrap text-sm text-brand-text-muted">{memberCount}</td>
+                                                <td className="p-4 whitespace-nowrap text-sm text-right space-x-2">
+                                                    <button onClick={() => handleOpenEditTeam(team)} className="text-blue-400 hover:text-blue-300 p-1 rounded-md hover:bg-blue-500/20 transition-colors" title="Edit Team"><PencilIcon /></button>
+                                                    <button onClick={() => handleOpenTransferOwner(team)} className="text-purple-400 hover:text-purple-300 p-1 rounded-md hover:bg-purple-500/20 transition-colors" title="Transfer Ownership"><SwitchHorizontalIcon /></button>
+                                                    <button onClick={() => handleOpenDisband(team)} className="text-red-400 hover:text-red-300 p-1 rounded-md hover:bg-red-500/20 transition-colors" title="Disband Team"><UserGroupIcon /></button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                     <div className="bg-brand-surface p-6 rounded-lg shadow-lg border border-brand-border/30">
+                        <h2 className="text-2xl font-semibold text-white mb-4">Post Management</h2>
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-brand-border">
+                                <thead className="bg-black/30">
+                                    <tr>
+                                        <th scope="col" className="p-4 text-left text-xs font-medium text-brand-text-muted uppercase tracking-wider">Post</th>
+                                        <th scope="col" className="p-4 text-left text-xs font-medium text-brand-text-muted uppercase tracking-wider">Author</th>
+                                        <th scope="col" className="p-4 text-left text-xs font-medium text-brand-text-muted uppercase tracking-wider">Date</th>
+                                        <th scope="col" className="p-4 text-right text-xs font-medium text-brand-text-muted uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-brand-surface/50 divide-y divide-brand-border/50">
+                                    {posts.slice(0, 20).map(post => {
+                                        const author = users.find(u => u.id === post.authorId);
+                                        return (
+                                            <tr key={post.id} className="hover:bg-brand-surface/40">
+                                                <td className="p-4 text-sm text-white max-w-sm truncate" title={post.content}>{post.content}</td>
+                                                <td className="p-4 whitespace-nowrap text-sm text-brand-text-muted">{author?.gamertag || 'Unknown'}</td>
+                                                <td className="p-4 whitespace-nowrap text-sm text-brand-text-muted">{timeAgo(post.timestamp)}</td>
+                                                <td className="p-4 whitespace-nowrap text-sm text-right">
+                                                    <button onClick={() => openDeletePostConfirm(post.id)} className="text-red-400 hover:text-red-300 p-1 rounded-md hover:bg-red-500/20 transition-colors" aria-label={`Delete post by ${author?.gamertag}`}>
+                                                        <TrashIcon />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div className="bg-brand-surface p-6 rounded-lg shadow-lg border border-brand-border/30">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-2xl font-semibold text-white">Quest Management</h2>
+                            <button onClick={handleOpenCreateQuestModal} className="bg-brand-interactive hover:bg-green-500 text-black font-bold py-2 px-4 rounded-md transition-colors">Create New Quest</button>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-brand-border">
+                                <thead className="bg-black/30">
+                                    <tr>
+                                        <th scope="col" className="p-4 text-left text-xs font-medium text-brand-text-muted uppercase tracking-wider">Title</th>
+                                        <th scope="col" className="p-4 text-left text-xs font-medium text-brand-text-muted uppercase tracking-wider">Prize</th>
+                                        <th scope="col" className="p-4 text-left text-xs font-medium text-brand-text-muted uppercase tracking-wider">Status</th>
+                                        <th scope="col" className="p-4 text-right text-xs font-medium text-brand-text-muted uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-brand-surface/50 divide-y divide-brand-border/50">
+                                    {quests.sort((a,b) => a.title.localeCompare(b.title)).map(quest => (
+                                        <tr key={quest.id} className="hover:bg-brand-surface/40">
+                                            <td className="p-4 whitespace-nowrap text-sm font-medium text-white">{quest.title}</td>
+                                            <td className="p-4 whitespace-nowrap text-sm text-brand-text-muted">{quest.prize}</td>
+                                            <td className="p-4 whitespace-nowrap text-sm text-brand-text-muted capitalize">{quest.status}</td>
                                             <td className="p-4 whitespace-nowrap text-sm text-right space-x-2">
-                                                <button onClick={() => handleOpenEditTeam(team)} className="text-blue-400 hover:text-blue-300 p-1 rounded-md hover:bg-blue-500/20 transition-colors" title="Edit Team"><PencilIcon /></button>
-                                                <button onClick={() => handleOpenTransferOwner(team)} className="text-purple-400 hover:text-purple-300 p-1 rounded-md hover:bg-purple-500/20 transition-colors" title="Transfer Ownership"><SwitchHorizontalIcon /></button>
-                                                <button onClick={() => handleOpenDisband(team)} className="text-red-400 hover:text-red-300 p-1 rounded-md hover:bg-red-500/20 transition-colors" title="Disband Team"><UserGroupIcon /></button>
+                                                <button onClick={() => handleOpenEditQuestModal(quest)} className="text-blue-400 hover:text-blue-300 p-1 rounded-md hover:bg-blue-500/20 transition-colors"><PencilIcon /></button>
+                                                <button onClick={() => openDeleteQuestConfirm(quest.id)} className="text-red-400 hover:text-red-300 p-1 rounded-md hover:bg-red-500/20 transition-colors"><TrashIcon /></button>
                                             </td>
                                         </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div className="bg-brand-surface p-6 rounded-lg shadow-lg border border-brand-border/30">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-2xl font-semibold text-white">Quest Management</h2>
-                        <button onClick={handleOpenCreateQuestModal} className="bg-brand-interactive hover:bg-green-500 text-black font-bold py-2 px-4 rounded-md transition-colors">Create New Quest</button>
-                    </div>
-                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-brand-border">
-                            <thead className="bg-black/30">
-                                <tr>
-                                    <th scope="col" className="p-4 text-left text-xs font-medium text-brand-text-muted uppercase tracking-wider">Title</th>
-                                    <th scope="col" className="p-4 text-left text-xs font-medium text-brand-text-muted uppercase tracking-wider">Prize</th>
-                                    <th scope="col" className="p-4 text-left text-xs font-medium text-brand-text-muted uppercase tracking-wider">Status</th>
-                                    <th scope="col" className="p-4 text-right text-xs font-medium text-brand-text-muted uppercase tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-brand-surface/50 divide-y divide-brand-border/50">
-                                {quests.sort((a,b) => a.title.localeCompare(b.title)).map(quest => (
-                                    <tr key={quest.id} className="hover:bg-brand-surface/40">
-                                        <td className="p-4 whitespace-nowrap text-sm font-medium text-white">{quest.title}</td>
-                                        <td className="p-4 whitespace-nowrap text-sm text-brand-text-muted">{quest.prize}</td>
-                                        <td className="p-4 whitespace-nowrap text-sm text-brand-text-muted capitalize">{quest.status}</td>
-                                        <td className="p-4 whitespace-nowrap text-sm text-right space-x-2">
-                                            <button onClick={() => handleOpenEditQuestModal(quest)} className="text-blue-400 hover:text-blue-300 p-1 rounded-md hover:bg-blue-500/20 transition-colors"><PencilIcon /></button>
-                                            <button onClick={() => openDeleteQuestConfirm(quest.id)} className="text-red-400 hover:text-red-300 p-1 rounded-md hover:bg-red-500/20 transition-colors"><TrashIcon /></button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -196,6 +289,7 @@ export const AdminDashboardPage: React.FC = () => {
             <RoleEditorModal isOpen={isRoleModalOpen} onClose={() => setIsRoleModalOpen(false)} onSave={handleSaveRole} user={editingUser}/>
             <PointsEditorModal isOpen={isPointsModalOpen} onClose={() => setIsPointsModalOpen(false)} onSave={handleSavePoints} user={editingUser}/>
             <ConfirmationModal isOpen={isDeleteUserConfirmOpen} onClose={() => setIsDeleteUserConfirmOpen(false)} onConfirm={handleConfirmDeleteUser} title="Delete User" message="Are you sure you want to permanently delete this user? All of their posts, comments, and messages will also be removed. This action cannot be undone." confirmText="Yes, Delete User"/>
+            <ConfirmationModal isOpen={isDeletePostConfirmOpen} onClose={() => setIsDeletePostConfirmOpen(false)} onConfirm={handleConfirmDeletePost} title="Delete Post" message="Are you sure you want to permanently delete this post? This action cannot be undone." confirmText="Yes, Delete"/>
             <TeamEditorModal isOpen={isTeamEditorOpen} onClose={() => setIsTeamEditorOpen(false)} onSave={handleSaveTeam} team={editingTeam} />
             <OwnerTransferModal isOpen={isOwnerTransferOpen} onClose={() => setIsOwnerTransferOpen(false)} onSave={handleTransferOwner} team={editingTeam} />
             <ConfirmationModal isOpen={isDisbandConfirmOpen} onClose={() => setIsDisbandConfirmOpen(false)} onConfirm={handleConfirmDisband} title="Disband Team" message={`Are you sure you want to disband ${editingTeam?.name}? All members will become free agents. This action is irreversible.`} confirmText="Yes, Disband" />

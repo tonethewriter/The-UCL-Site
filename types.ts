@@ -117,3 +117,9 @@ export interface Application {
     userId: string;
     status: InviteStatus;
 }
+
+export interface ActivityLog {
+  id: string;
+  timestamp: string;
+  message: string;
+}
