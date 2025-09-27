@@ -3,9 +3,25 @@ import { useAuth } from '../hooks/useAuth';
 import { User } from '../types';
 import { Link } from 'react-router-dom';
 import { RoleBadge } from '../components/RoleBadge';
-import { UCLPointIcon } from '../constants';
+import { UCLPointIcon, UserPlusIcon } from '../constants';
 
 const FreeAgentCard: React.FC<{ user: User }> = ({ user }) => {
+    const { currentUser, sendInvite, invites } = useAuth();
+    const [isInvited, setIsInvited] = useState(false);
+
+    const canInvite = currentUser && currentUser.role.includes('owner') && currentUser.teamId;
+    const hasPendingInvite = invites.some(i => i.userId === user.id && i.teamId === currentUser?.teamId && i.status === 'pending');
+
+    const handleInvite = async () => {
+        if (!canInvite || !currentUser?.teamId) return;
+        try {
+            await sendInvite(currentUser.teamId, user.id);
+            setIsInvited(true);
+        } catch(err: any) {
+            alert(err.message);
+        }
+    }
+
     return (
         <div className="bg-brand-surface p-5 rounded-lg shadow-lg border border-brand-border/50 flex flex-col items-center text-center transition-transform hover:-translate-y-1">
             <img src={user.profilePicture} alt={user.gamertag} className="w-24 h-24 rounded-full bg-brand-border object-cover ring-4 ring-brand-border/50" />
@@ -17,12 +33,24 @@ const FreeAgentCard: React.FC<{ user: User }> = ({ user }) => {
                 <UCLPointIcon />
                 {user.uclPoints.toLocaleString()}
             </div>
-            <Link 
-                to={`/users/${user.id}`} 
-                className="mt-4 w-full bg-brand-interactive hover:bg-green-500 text-black font-bold py-2 px-4 rounded-md transition-colors"
-            >
-                View Profile
-            </Link>
+            <div className="mt-4 w-full space-y-2">
+                <Link 
+                    to={`/users/${user.id}`} 
+                    className="block w-full bg-brand-border hover:bg-brand-interactive/70 text-white font-bold py-2 px-4 rounded-md transition-colors"
+                >
+                    View Profile
+                </Link>
+                {canInvite && (
+                    <button 
+                        onClick={handleInvite}
+                        disabled={hasPendingInvite || isInvited}
+                        className="w-full flex items-center justify-center gap-2 bg-brand-interactive hover:bg-green-500 text-black font-bold py-2 px-4 rounded-md transition-colors disabled:bg-brand-surface disabled:text-brand-text-muted disabled:cursor-not-allowed"
+                    >
+                        <UserPlusIcon />
+                        <span>{hasPendingInvite || isInvited ? 'Invited' : 'Invite'}</span>
+                    </button>
+                )}
+            </div>
         </div>
     );
 };

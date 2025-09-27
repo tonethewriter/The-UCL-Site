@@ -1,15 +1,39 @@
 export type UserRole = 'player' | 'player_plus' | 'team_owner' | 'team_owner_plus' | 'co_owner' | 'admin';
 
+export interface NotificationSettings {
+  inApp: {
+    new_reaction: boolean;
+    new_comment: boolean;
+    quest_complete: boolean;
+    welcome: boolean;
+    team_invite: boolean;
+    team_application: boolean;
+    application_update: boolean;
+    mention: boolean;
+  };
+  email: {
+    new_reaction: boolean;
+    new_comment: boolean;
+    quest_complete: boolean;
+  };
+}
+
+
 export interface User {
   id: string;
   gamertag: string;
   email: string;
   pin: string; 
   role: UserRole;
-  teamName?: string;
+  notificationSettings: NotificationSettings;
+  createdAt: string;
+  teamId?: string;
   profilePicture?: string;
   uclPoints: number;
   isFreeAgent?: boolean;
+  twitter?: string;
+  twitch?: string;
+  youtube?: string;
 }
 
 export interface Reaction {
@@ -39,7 +63,7 @@ export interface Post {
 export type QuestStatus = 'incomplete' | 'started' | 'completed';
 
 export interface Quest {
-  id: string;
+  id:string;
   title: string;
   description: string;
   status: QuestStatus;
@@ -56,4 +80,40 @@ export interface Message {
   channelId: string; // e.g., 'team_Alpha', 'owners_chat'
   content: string;
   timestamp: string;
+}
+
+export type NotificationType = 'new_reaction' | 'new_comment' | 'quest_complete' | 'welcome' | 'team_invite' | 'team_application' | 'application_update' | 'mention';
+
+export interface Notification {
+  id: string;
+  userId: string; // The user who should receive the notification
+  type: NotificationType;
+  message: string;
+  link: string; // e.g., '/posts/p1' or '/quests'
+  isRead: boolean;
+  timestamp: string;
+}
+
+export interface Team {
+    id: string;
+    name: string;
+    logoUrl: string;
+    ownerId: string;
+    description: string;
+}
+
+export type InviteStatus = 'pending' | 'accepted' | 'declined';
+
+export interface Invite {
+    id: string;
+    teamId: string;
+    userId: string;
+    status: InviteStatus;
+}
+
+export interface Application {
+    id: string;
+    teamId: string;
+    userId: string;
+    status: InviteStatus;
 }

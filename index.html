@@ -13,6 +13,20 @@
       body {
         font-family: 'Poppins', sans-serif;
       }
+      @keyframes shimmer {
+        0%, 100% {
+            color: #A0AEC0; /* Cool Gray */
+            text-shadow: 0 0 5px rgba(160, 174, 192, 0.3);
+        }
+        50% {
+            color: #FFFFFF; /* Bright White */
+            text-shadow: 0 0 20px rgba(255, 255, 255, 1), 0 0 10px rgba(229, 231, 235, 0.8);
+        }
+      }
+      .shimmer-char {
+        display: inline-block;
+        animation: shimmer 2.5s ease-in-out infinite;
+      }
     </style>
   <script type="importmap">
 {

@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { useLocation } from 'react-router-dom';
+import { parseMentions, ShimmeringGamertag } from '../constants';
 
 // Icons for UI
 const SendIcon: React.FC = () => (
@@ -21,35 +23,72 @@ const CrownIcon: React.FC = () => (
     </svg>
 );
 
+const UserIcon: React.FC = () => (
+  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+  </svg>
+);
+
+
 // Main Component
 export const MessagesPage: React.FC = () => {
-    const { currentUser, users, messages, sendMessage } = useAuth();
-    const [activeChannelId, setActiveChannelId] = useState<string | null>(null);
+    const { currentUser, users, teams, messages, sendMessage } = useAuth();
+    const location = useLocation();
+    const [activeChannelId, setActiveChannelId] = useState<string | null>(location.state?.activeChannelId || null);
     const [newMessage, setNewMessage] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const channels = useMemo(() => {
         if (!currentUser) return [];
-        const userChannels = new Map<string, { name: string, icon: React.ReactNode }>();
+        const userChannels = new Map<string, { name: string, icon: React.ReactNode, type: 'group' | 'dm' }>();
+        const dmChannelIds = new Set<string>();
 
-        // Owners channel
+        // Discover DMs from messages
+        messages.forEach(msg => {
+            if (msg.channelId.startsWith('dm_') && msg.channelId.includes(currentUser.id)) {
+                dmChannelIds.add(msg.channelId);
+            }
+        });
+        // Add DM channel from navigation state if it's new
+        if (location.state?.activeChannelId) {
+            dmChannelIds.add(location.state.activeChannelId);
+        }
+
+        // Add group channels
+        // Owners channel: includes team owners, co-owners, and admins
         if (currentUser.role === 'admin' || currentUser.role.includes('owner')) {
-            userChannels.set('owners_chat', { name: 'Owners Chat', icon: <CrownIcon /> });
+            userChannels.set('owners_chat', { name: 'Owners Chat', icon: <CrownIcon />, type: 'group' });
         }
 
         // Team channel
-        if (currentUser.teamName) {
-            const channelId = `team_${currentUser.teamName.replace(/\s+/g, '_')}`;
-            userChannels.set(channelId, { name: `Team: ${currentUser.teamName}`, icon: <UsersIcon /> });
+        if (currentUser.teamId) {
+            const team = teams.find(t => t.id === currentUser.teamId);
+            if(team) {
+                const channelId = `team_${team.name.replace(/\s+/g, '_')}`;
+                userChannels.set(channelId, { name: `Team: ${team.name}`, icon: <UsersIcon />, type: 'group' });
+            }
         }
 
-        // Auto-select first channel if none is selected
-        if (!activeChannelId && userChannels.size > 0) {
-            setActiveChannelId(Array.from(userChannels.keys())[0]);
+        // Process discovered DM channels
+        dmChannelIds.forEach(channelId => {
+            const userIds = channelId.split('_').slice(1);
+            const otherUserId = userIds.find(id => id !== currentUser.id);
+            const otherUser = users.find(u => u.id === otherUserId);
+            if (otherUser) {
+                userChannels.set(channelId, { name: otherUser.gamertag, icon: <UserIcon />, type: 'dm' });
+            }
+        });
+
+        const channelList = Array.from(userChannels.entries()).map(([id, data]) => ({ id, ...data }));
+        
+        if (!activeChannelId && channelList.length > 0) {
+            setActiveChannelId(channelList[0].id);
+        } else if (!userChannels.has(activeChannelId as string) && channelList.length > 0) {
+            setActiveChannelId(channelList[0].id);
         }
         
-        return Array.from(userChannels.entries()).map(([id, data]) => ({ id, ...data }));
-    }, [currentUser, activeChannelId]);
+        return channelList;
+    }, [currentUser, messages, users, teams, activeChannelId, location.state]);
 
     const activeMessages = useMemo(() => {
         return messages
@@ -89,7 +128,6 @@ export const MessagesPage: React.FC = () => {
 
     return (
         <div className="max-w-7xl mx-auto h-[calc(100vh-64px)] flex">
-            {/* Sidebar with Channels */}
             <aside className="w-1/3 md:w-1/4 bg-brand-surface/40 border-r border-brand-border/30 flex flex-col">
                 <div className="p-4 border-b border-brand-border/30">
                     <h1 className="text-xl font-bold text-white">Channels</h1>
@@ -110,7 +148,6 @@ export const MessagesPage: React.FC = () => {
                 </nav>
             </aside>
 
-            {/* Main Chat Area */}
             <main className="flex-1 flex flex-col bg-black/20">
                 {activeChannel ? (
                     <>
@@ -119,7 +156,6 @@ export const MessagesPage: React.FC = () => {
                             <h2 className="text-lg font-bold text-white">{activeChannel.name}</h2>
                         </header>
 
-                        {/* Messages */}
                         <div className="flex-1 p-4 overflow-y-auto space-y-4">
                             {activeMessages.map(message => {
                                 const author = users.find(u => u.id === message.senderId);
@@ -136,11 +172,11 @@ export const MessagesPage: React.FC = () => {
                                         <div className={`max-w-xs md:max-w-md p-3 rounded-xl ${isCurrentUser ? 'bg-brand-interactive text-black rounded-br-none' : 'bg-brand-surface text-white rounded-bl-none'}`}>
                                             {!isCurrentUser && (
                                                  <div className="flex items-baseline gap-2">
-                                                    <p className="font-bold text-sm text-brand-accent">{message.senderGamertag}</p>
+                                                    <ShimmeringGamertag user={author} baseClassName="font-bold text-sm" />
                                                     <p className="text-xs text-brand-text-muted">{timeAgo(message.timestamp)}</p>
                                                 </div>
                                             )}
-                                            <p className="text-sm whitespace-pre-wrap mt-1 break-words">{message.content}</p>
+                                            <p className="text-sm whitespace-pre-wrap mt-1 break-words">{parseMentions(message.content, users)}</p>
                                         </div>
                                     </div>
                                 );
@@ -148,13 +184,12 @@ export const MessagesPage: React.FC = () => {
                             <div ref={messagesEndRef} />
                         </div>
                         
-                        {/* Message Input */}
                         <div className="p-4 bg-brand-surface/50 border-t border-brand-border/30">
                             <form onSubmit={handleSendMessage} className="flex items-center gap-3">
                                 <textarea
                                     value={newMessage}
                                     onChange={(e) => setNewMessage(e.target.value)}
-                                    placeholder={`Message in #${activeChannel.name}`}
+                                    placeholder={`Message ${activeChannel.type === 'dm' ? '' : 'in '}${activeChannel.name}`}
                                     rows={1}
                                     className="flex-1 bg-black/30 text-white border border-brand-border rounded-lg p-2.5 resize-none focus:outline-none focus:ring-1 focus:ring-brand-accent transition text-sm"
                                 />
