@@ -204,43 +204,88 @@ export interface AuthContextType {
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// --- LocalStorage Persistence ---
+// Helper function to safely read from localStorage.
+const loadFromLocalStorage = <T,>(key: string, initialValue: T): T => {
+    try {
+        const saved = localStorage.getItem(key);
+        return saved ? JSON.parse(saved) : initialValue;
+    } catch (error) {
+        console.warn(`Error reading ${key} from localStorage:`, error);
+        return initialValue;
+    }
+};
+
+// Helper function to safely write to localStorage.
+const saveToLocalStorage = <T,>(key: string, value: T) => {
+    try {
+        localStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+        console.error(`Error saving ${key} to localStorage:`, error);
+    }
+};
+
+
 export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
   // --- STATE MANAGEMENT ---
   // The current user's session is persisted in localStorage.
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    try {
-      const savedUser = localStorage.getItem('ucl_user');
-      return savedUser ? JSON.parse(savedUser) : null;
-    } catch (error) {
-      console.warn('Error reading user from localStorage:', error);
-      return null;
-    }
-  });
+  const [currentUser, setCurrentUser] = useState<User | null>(() => loadFromLocalStorage('ucl_user', null));
   
-  // All other app data is held in state, acting as a live, in-memory database.
-  // This ensures all components share the same data, and it resets on full page reload.
-  const [users, setUsers] = useState<User[]>(initialUsers);
-  const [posts, setPosts] = useState<Post[]>(initialPosts);
-  const [quests, setQuests] = useState<Quest[]>(initialQuests);
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
-  const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
-  const [teams, setTeams] = useState<Team[]>(initialTeams);
-  const [invites, setInvites] = useState<Invite[]>(initialInvites);
-  const [applications, setApplications] = useState<Application[]>(initialApplications);
-  const [activityLog, setActivityLog] = useState<ActivityLog[]>(initialActivityLog);
-  const [customEmojis, setCustomEmojis] = useState<CustomEmoji[]>(initialCustomEmojis);
+  // All other app data is held in state and persisted to localStorage.
+  // On first load, it initializes from mock data if localStorage is empty.
+  const [users, setUsers] = useState<User[]>(() => loadFromLocalStorage('ucl_users', initialUsers));
+  const [posts, setPosts] = useState<Post[]>(() => loadFromLocalStorage('ucl_posts', initialPosts));
+  const [quests, setQuests] = useState<Quest[]>(() => loadFromLocalStorage('ucl_quests', initialQuests));
+  const [messages, setMessages] = useState<Message[]>(() => loadFromLocalStorage('ucl_messages', initialMessages));
+  const [notifications, setNotifications] = useState<Notification[]>(() => loadFromLocalStorage('ucl_notifications', initialNotifications));
+  const [teams, setTeams] = useState<Team[]>(() => loadFromLocalStorage('ucl_teams', initialTeams));
+  const [invites, setInvites] = useState<Invite[]>(() => loadFromLocalStorage('ucl_invites', initialInvites));
+  const [applications, setApplications] = useState<Application[]>(() => loadFromLocalStorage('ucl_applications', initialApplications));
+  const [activityLog, setActivityLog] = useState<ActivityLog[]>(() => loadFromLocalStorage('ucl_activityLog', initialActivityLog));
+  const [customEmojis, setCustomEmojis] = useState<CustomEmoji[]>(() => loadFromLocalStorage('ucl_customEmojis', initialCustomEmojis));
   
   const reactionPointReward = 5;
 
-  // --- SESSION PERSISTENCE ---
-  // Save the current user to localStorage whenever they log in, log out, or their data changes.
+  // --- DATA PERSISTENCE ---
+  // These effects save each slice of state to localStorage whenever it changes.
+  useEffect(() => { saveToLocalStorage('ucl_users', users); }, [users]);
+  useEffect(() => { saveToLocalStorage('ucl_posts', posts); }, [posts]);
+  useEffect(() => { saveToLocalStorage('ucl_quests', quests); }, [quests]);
+  useEffect(() => { saveToLocalStorage('ucl_messages', messages); }, [messages]);
+  useEffect(() => { saveToLocalStorage('ucl_notifications', notifications); }, [notifications]);
+  useEffect(() => { saveToLocalStorage('ucl_teams', teams); }, [teams]);
+  useEffect(() => { saveToLocalStorage('ucl_invites', invites); }, [invites]);
+  useEffect(() => { saveToLocalStorage('ucl_applications', applications); }, [applications]);
+  useEffect(() => { saveToLocalStorage('ucl_activityLog', activityLog); }, [activityLog]);
+  useEffect(() => { saveToLocalStorage('ucl_customEmojis', customEmojis); }, [customEmojis]);
+
+  // This effect synchronizes the currentUser state with the master 'users' list.
+  // This is crucial for ensuring the logged-in user's data is always up-to-date
+  // after any operation that might change it (e.g., earning points, changing roles).
   useEffect(() => {
     if (currentUser) {
-      localStorage.setItem('ucl_user', JSON.stringify(currentUser));
+        const updatedUserInList = users.find(u => u.id === currentUser.id);
+        if (updatedUserInList) {
+            // Prevent infinite loops by only updating if the data is actually different.
+            if (JSON.stringify(currentUser) !== JSON.stringify(updatedUserInList)) {
+                setCurrentUser(updatedUserInList);
+            }
+        } else {
+            // If the user was deleted from the main list, log them out.
+            logout();
+        }
+    }
+  }, [users]); // This depends on `currentUser` as well, but adding it creates a render loop. `users` is the master list.
+
+  // This effect saves the synchronized currentUser to its own localStorage entry for quick session restoration.
+  useEffect(() => {
+    if (currentUser) {
+        saveToLocalStorage('ucl_user', currentUser);
     } else {
-      localStorage.removeItem('ucl_user');
+        localStorage.removeItem('ucl_user');
     }
   }, [currentUser]);
+
   
   const createActivityLog = (entities: ActivityLogEntity[]) => {
     const newLog: ActivityLog = {
@@ -438,8 +483,7 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
 
       setQuests(quests.map(q => q.id === questId ? { ...q, claimedBy: [...q.claimedBy, currentUser.id] } : q));
       const points = parseInt(quest.prize.split(' ')[0]) || 0;
-      setCurrentUser(prev => prev ? { ...prev, uclPoints: prev.uclPoints + points } : null);
-       setUsers(users.map(u => u.id === currentUser.id ? { ...u, uclPoints: u.uclPoints + points } : u));
+      setUsers(users.map(u => u.id === currentUser.id ? { ...u, uclPoints: u.uclPoints + points } : u));
   };
   
   const updateQuestProgress = (questId: string, amount: number) => {
@@ -478,9 +522,7 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
       throw new Error("Only players can leave a team.");
     }
     const team = teams.find(t => t.id === currentUser.teamId);
-    const updatedUser = { ...currentUser, teamId: undefined };
-    setCurrentUser(updatedUser);
-    setUsers(users.map(u => u.id === currentUser.id ? updatedUser : u));
+    setUsers(users.map(u => u.id === currentUser.id ? { ...u, teamId: undefined } : u));
     if (team) {
         createActivityLog([{ type: 'user', id: currentUser.id, text: currentUser.gamertag }, { type: 'text', text: ' left team ' }, { type: 'team', id: team.id, text: team.name }, { type: 'text', text: '.' }]);
     }
@@ -498,7 +540,6 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
         teamId: isBecomingFreeAgent ? undefined : currentUser.teamId 
     };
 
-    setCurrentUser(updatedUser);
     setUsers(users.map(u => u.id === currentUser.id ? updatedUser : u));
     
     if (isBecomingFreeAgent) {
@@ -523,10 +564,7 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
   
   const updateNotificationSettings = async (settings: NotificationSettings) => {
     if (!currentUser) throw new Error("You must be logged in to update settings.");
-
-    const updatedUser = { ...currentUser, notificationSettings: settings };
-    setCurrentUser(updatedUser);
-    setUsers(users.map(u => u.id === currentUser.id ? updatedUser : u));
+    setUsers(users.map(u => u.id === currentUser.id ? { ...u, notificationSettings: settings } : u));
   };
 
   // Quest Management
@@ -568,10 +606,6 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
       
       const updatedUser = {...userToUpdate, role: newRole};
       setUsers(prev => prev.map(u => u.id === userId ? updatedUser : u));
-
-      if (currentUser?.id === userId) {
-          setCurrentUser(updatedUser);
-      }
   };
 
   const deletePost = (postId: string) => {
@@ -608,9 +642,6 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
       }
       return u;
     }));
-    if (currentUser?.id === userId) {
-      setCurrentUser(prev => prev ? { ...prev, uclPoints: Math.max(0, prev.uclPoints + amount) } : null);
-    }
   };
 
   const updateUserProfile = async (profileData: { gamertag: string; email: string; twitter?: string; twitch?: string; youtube?: string; }) => {
@@ -623,13 +654,7 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
         throw new Error('Email is already registered.');
     }
     
-    const updatedUser: User = { 
-        ...currentUser,
-        ...profileData
-    };
-    
-    setCurrentUser(updatedUser);
-    setUsers(users.map(u => u.id === currentUser.id ? updatedUser : u));
+    setUsers(users.map(u => u.id === currentUser.id ? { ...u, ...profileData } : u));
   };
 
   // Team Management
@@ -654,7 +679,6 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
         if (response === 'accepted') {
             const team = teams.find(t => t.id === invite.teamId);
             const updatedUser = { ...currentUser, teamId: invite.teamId, isFreeAgent: false };
-            setCurrentUser(updatedUser);
             setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
             setApplications(prev => prev.filter(app => app.userId !== currentUser.id)); // Remove other applications
             if (team) {
@@ -732,16 +756,12 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
     // Plus Features
     const pinPost = async (postId: string | null) => {
         if (!currentUser) throw new Error("Not logged in.");
-        const updatedUser = { ...currentUser, pinnedPostId: postId || undefined };
-        setCurrentUser(updatedUser);
-        setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
+        setUsers(prev => prev.map(u => u.id === currentUser.id ? { ...u, pinnedPostId: postId || undefined } : u));
     };
 
     const updateProfileBanner = async (bannerUrl: string) => {
         if (!currentUser) throw new Error("Not logged in.");
-        const updatedUser = { ...currentUser, profileBanner: bannerUrl };
-        setCurrentUser(updatedUser);
-        setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
+        setUsers(prev => prev.map(u => u.id === currentUser.id ? { ...u, profileBanner: bannerUrl } : u));
     };
 
     const updateTeamBanner = async (teamId: string, bannerUrl: string) => {
@@ -768,16 +788,16 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
     const deleteCustomEmoji = async (emojiId: string) => {
         if (!currentUser) throw new Error("Not logged in.");
         const emoji = customEmojis.find(e => e.id === emojiId);
-        if (!emoji || emoji.uploaderId !== currentUser.id) throw new Error("You can only delete your own emojis.");
+        if (!emoji || (emoji.uploaderId !== currentUser.id && currentUser.role !== 'admin')) {
+             throw new Error("You can only delete your own emojis.");
+        }
 
         setCustomEmojis(prev => prev.filter(e => e.id !== emojiId));
     };
     
     const updateProfileVisibility = async (settings: ProfileVisibility) => {
         if (!currentUser) throw new Error("Not logged in.");
-        const updatedUser = { ...currentUser, profileVisibility: settings };
-        setCurrentUser(updatedUser);
-        setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
+        setUsers(prev => prev.map(u => u.id === currentUser.id ? { ...u, profileVisibility: settings } : u));
     };
     
     // Moderator Actions
