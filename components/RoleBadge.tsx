@@ -8,11 +8,11 @@ interface RoleBadgeProps {
 export const RoleBadge: React.FC<RoleBadgeProps> = ({ role }) => {
     const roleStyles: Record<UserRole, { text: string; className: string }> = {
         admin: { text: 'Admin', className: 'bg-red-600 text-white' },
-        team_owner: { text: 'Owner', className: 'bg-blue-600 text-white' },
-        team_owner_plus: { text: 'Owner ⭐', className: 'bg-blue-500 text-white' },
-        co_owner: { text: 'Co-Owner', className: 'bg-cyan-600 text-white' },
-        player_plus: { text: 'Player ⭐', className: 'bg-purple-600 text-white' },
-        player: { text: 'Player', className: 'bg-green-700 text-green-100' },
+        team_owner_plus: { text: 'Owner ⭐', className: 'bg-brand-accent text-black' },
+        team_owner: { text: 'Owner', className: 'bg-brand-interactive text-white' },
+        co_owner: { text: 'Co-Owner', className: 'bg-emerald-600 text-white' },
+        player_plus: { text: 'Player ⭐', className: 'bg-teal-600 text-white' },
+        player: { text: 'Player', className: 'bg-brand-border text-brand-text' },
     };
 
     const style = roleStyles[role] || roleStyles.player;

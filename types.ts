@@ -9,6 +9,7 @@ export interface User {
   teamName?: string;
   profilePicture?: string;
   uclPoints: number;
+  isFreeAgent?: boolean;
 }
 
 export interface Reaction {
@@ -46,4 +47,13 @@ export interface Quest {
   claimedBy: string[]; // Array of user IDs who have claimed the prize
   progress?: number;
   target?: number;
+}
+
+export interface Message {
+  id: string;
+  senderId: string;
+  senderGamertag: string;
+  channelId: string; // e.g., 'team_Alpha', 'owners_chat'
+  content: string;
+  timestamp: string;
 }

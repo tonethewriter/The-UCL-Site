@@ -14,6 +14,8 @@ import { AuthenticatedRoute } from './components/AuthenticatedRoute';
 import { UserProfilePage } from './pages/UserProfilePage';
 import { TonesQuestsPage } from './pages/TonesQuestsPage';
 import { PaymentModal } from './components/PaymentModal';
+import { MessagesPage } from './pages/MessagesPage';
+import { FreeAgentsPage } from './pages/FreeAgentsPage';
 
 const App: React.FC = () => {
     return (
@@ -27,6 +29,22 @@ const App: React.FC = () => {
                         <Route path="/signup" element={<SignUpPage />} />
                         <Route path="/quests" element={<TonesQuestsPage />} />
                         <Route path="/users/:userId" element={<UserProfilePage />} />
+                         <Route
+                            path="/messages"
+                            element={
+                                <AuthenticatedRoute>
+                                    <MessagesPage />
+                                </AuthenticatedRoute>
+                            }
+                        />
+                         <Route
+                            path="/free-agents"
+                            element={
+                                <AuthenticatedRoute>
+                                    <FreeAgentsPage />
+                                </AuthenticatedRoute>
+                            }
+                        />
                         <Route
                             path="/profile"
                             element={

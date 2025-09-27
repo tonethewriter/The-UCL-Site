@@ -19,8 +19,8 @@ export const HomePage: React.FC = () => {
     }, [posts, searchTerm]);
 
     return (
-        <div className="max-w-3xl mx-auto py-8 px-4">
-            <h1 className="text-5xl font-bold text-center mb-4 text-yellow-300 tracking-wider">UCL Wall</h1>
+        <div className="max-w-3xl mx-auto py-6 md:py-8 px-4">
+            <h1 className="text-4xl md:text-5xl font-bold text-center mb-4 text-brand-accent tracking-wider">UCL Wall</h1>
             
             <div className="mb-6">
                 <input
@@ -28,7 +28,7 @@ export const HomePage: React.FC = () => {
                     placeholder="Search posts by content or author..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-green-900/60 text-white border border-green-800 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition placeholder-gray-400/50"
+                    className="w-full bg-brand-surface text-white border border-brand-border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-brand-accent transition placeholder-brand-text-muted/50"
                 />
             </div>
 

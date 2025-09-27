@@ -1,52 +1,43 @@
 import React from 'react';
 
-export const AVAILABLE_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🔥'];
+export const AVAILABLE_REACTIONS = ['👍', '❤️', '😂', '🔥', '😮', '😢'];
 
-export const TrashIcon = () => (
+export const UCLPointIcon: React.FC = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+  </svg>
+);
+
+export const CommentIcon: React.FC = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" />
+        <path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm1.5 0a.5.5 0 00-.5.5v6a.5.5 0 00.5.5h11a.5.5 0 00.5-.5V5.5a.5.5 0 00-.5-.5h-11z" />
+        <path d="M3 13.5a.5.5 0 01.5-.5h9a.5.5 0 010 1h-9a.5.5 0 01-.5-.5z" />
     </svg>
 );
 
-export const QuestionMarkIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-1 1v1a1 1 0 102 0V8a1 1 0 00-1-1zM9 12a1 1 0 102 0 1 1 0 00-2 0z" clipRule="evenodd" />
+export const QuestionMarkIcon: React.FC = () => (
+    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.79 4 4 0 1.105-.448 2.105-1.172 2.828-.724.724-1.724 1.172-2.828 1.172-1.104 0-2.104-.448-2.828-1.172a3.986 3.986 0 01-1.172-2.828c0-1.105.448-2.105 1.172-2.828z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18v.01" />
     </svg>
 );
 
-export const UCLPointIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-        <path d="M8.433 7.418c.158-.103.346-.195.577-.291 1.253-.503 2.642.022 3.493 1.02.78 1.039.81 2.334.214 3.395a2.5 2.5 0 01-3.707.214 2.5 2.5 0 01-.214-3.707c.23-.306.52-1.076 1.02-1.631.503-.555.628-1.02.214-1.02-.414 0-1.04.59-1.454 1.214" />
-        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.75 5.146a.75.75 0 01.043 1.06L3.109 7.854a.75.75 0 11-1.06-1.06l1.637-1.648a.75.75 0 011.06.044zM16.89 12.146a.75.75 0 11-1.06 1.06l-1.648-1.637a.75.75 0 011.06-1.06l1.648 1.637z" clipRule="evenodd" />
+export const PayPalIcon: React.FC = () => (
+    <svg className="w-5 h-5" role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <title>PayPal</title>
+        <path d="M7.064 6.421c.216-1.023 1.22-1.73 2.454-1.73h6.42c2.81 0 4.207 1.754 3.659 4.614-.548 2.86-2.453 4.31-4.962 4.31H9.986c-.548 0-.914.365-.73 1.092l1.64 4.568c.182.546.637.91 1.182.91h2.274c.455 0 .819-.273.91-.728l.455-2.273c.182-.82-.273-1.273-1.092-1.273H9.256c-1.365 0-2.365-.728-2.637-2.002-.273-1.273.454-2.183 1.545-2.183h8.37c1.545 0 2.454-.728 2.726-2.09.273-1.365-.455-2.183-1.636-2.183h-5.82c-1.454 0-2.272.819-2.545 2.002-.124.546-.6.82-1.143.728L7.065 6.42z" fill="#003087"/>
     </svg>
 );
 
-export const PencilIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+export const CreditCardIcon: React.FC = () => (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
     </svg>
 );
 
-export const CommentIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-      <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.02-3.06A8.005 8.005 0 012 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM4.416 14.65A6.002 6.002 0 0010 15c3.314 0 6-2.686 6-6s-2.686-6-6-6-6 2.686-6 6c0 1.282.404 2.47 1.09 3.447l.26.42-.16 1.48-1.48.16.42.26z" clipRule="evenodd" />
-    </svg>
-);
-
-export const PayPalIcon = () => (
-    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M3.353 21c.54 0 .88-.34.993-.9l2.09-12.532c.113-.66.653-1.014 1.32-1.014h5.313c4.133 0 6.64 2.144 5.92 6.13-.533 3.022-2.3 4.81-4.993 4.81h-2.183l-.407 2.454c-.113.66-.54 1.013-1.207 1.013H3.353zm5.02-11.233c-.113-.567-.34-1.134-.993-1.134H5.613l-1.133 6.79h2.3c.667 0 1.1-.34 1.207-.9l.34-2.757h.04zm7.252 2.3c.427-2.143-.88-3.4-3.133-3.4H9.68l.88 5.153h.994c2.273 0 3.353-.9 2.92-4.053z" fill="#009cde"/>
-    </svg>
-);
-
-export const CreditCardIcon = () => (
-    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M20 4H4c-1.103 0-2 .897-2 2v12c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V6c0-1.103-.897-2-2-2zM4 6h16v2H4V6zm0 12v-6h16.001l.001 6H4z" fill="currentColor"/>
-    </svg>
-);
-
-export const ApplePayIcon = () => (
-    <svg className="w-6 h-6" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M50.41 33.55c.14-11.39-8.42-16.7-9.3-17.06-.5-.19-1.03.04-1.26.5-.23.47-.04.97.43 1.22.47.24 7.69 4.39 7.55 13.9-2.12.33-4.52 1.58-6.16 3.82-1.9 2.6-3.18 5.94-2.82 9.25.96 8.95 8.32 12.8 11.56 12.8 3.2 0 4.1-1.6 7.6-1.6 3.44 0 4.63 1.6 7.84 1.6 3.32 0 10.3-4.32 11.25-13.6-5.23-3.12-8.9-7.53-8.69-12.73zM45.5 12.35c2.4-2.83 4.14-6.8 3.73-10.7-3.48.1-7.1 2.3-9.52 5.13-2.1 2.5-4.4 6.7-3.9 10.4 3.9.2 7.28-2.04 9.7-4.83z" fill="currentColor"/>
+export const ApplePayIcon: React.FC = () => (
+    <svg className="w-5 h-5" role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <title>Apple Pay</title>
+        <path d="M18.89 12.005c0 1.94-1.205 3.033-3.111 3.033-1.859 0-2.82-1.01-4.223-1.01-.278 0-1.636.987-2.986.987-1.835 0-3.328-1.228-3.328-3.21s1.397-3.234 3.218-3.234c.99 0 2.242.73 3.44.73.189 0 2.071-.84 3.492-.84 1.779.023 3.498 1.345 3.498 3.545zM15.116 8.35c.023-1.812 1.467-2.843 3.111-2.933-.189.047-2.16 1.25-2.709 2.91zm-4.482-.862c.942-1.137 2.404-1.916 2.404-1.916s-1.467 1.835-2.266 2.843c-.776.987-1.489 2.583-1.489 2.583s-1.558-1.51-2.52-2.73c-1.08-.942-2.07-1.858-2.07-1.858s2.023.753 3.047 1.767c.189.188.82.707 1.161.942.34-.14.776-.42 1.185-.73z" fill="currentColor"/>
     </svg>
 );

@@ -14,7 +14,7 @@ type PaymentStatus = 'idle' | 'processing' | 'success' | 'error';
 const PaymentButton: React.FC<{ icon: React.ReactNode; label: string; onClick: () => void }> = ({ icon, label, onClick }) => (
     <button
         onClick={onClick}
-        className="w-full flex items-center justify-center gap-3 bg-green-700/80 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors"
+        className="w-full flex items-center justify-center gap-3 bg-brand-surface/80 hover:bg-brand-border text-white font-bold py-3 px-4 rounded-lg transition-colors"
     >
         {icon}
         <span>{label}</span>
@@ -57,9 +57,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, pro
             case 'processing':
                 return (
                     <div className="text-center py-12">
-                        <div className="w-12 h-12 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                        <div className="w-12 h-12 border-4 border-brand-accent border-t-transparent rounded-full animate-spin mx-auto"></div>
                         <p className="mt-4 text-white font-semibold">Processing Payment...</p>
-                        <p className="text-gray-400 text-sm">Please do not close this window.</p>
+                        <p className="text-brand-text-muted text-sm">Please do not close this window.</p>
                     </div>
                 );
             case 'success':
@@ -69,7 +69,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, pro
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <p className="mt-4 text-white font-semibold text-xl">Payment Successful!</p>
-                        <p className="text-gray-300">Your account has been upgraded.</p>
+                        <p className="text-brand-text-muted">Your account has been upgraded.</p>
                     </div>
                 );
             case 'error':
@@ -80,7 +80,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, pro
                         </svg>
                         <p className="mt-4 text-white font-semibold text-xl">Payment Failed</p>
                         <p className="text-red-400 mt-2">{errorMessage}</p>
-                         <button onClick={() => setStatus('idle')} className="mt-6 bg-yellow-600 hover:bg-yellow-700 text-green-900 font-bold py-2 px-6 rounded-lg">
+                         <button onClick={() => setStatus('idle')} className="mt-6 bg-brand-interactive hover:bg-green-500 text-black font-bold py-2 px-6 rounded-lg">
                             Try Again
                         </button>
                     </div>
@@ -89,20 +89,20 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, pro
             default:
                 return (
                     <>
-                        <h2 className="text-2xl font-bold text-yellow-300 text-center">Complete Your Purchase</h2>
-                        <div className="my-6 bg-green-950/50 p-4 rounded-lg text-center">
-                            <p className="text-gray-300">{productName}</p>
+                        <h2 className="text-2xl font-bold text-brand-accent text-center">Complete Your Purchase</h2>
+                        <div className="my-6 bg-black/50 p-4 rounded-lg text-center">
+                            <p className="text-brand-text-muted">{productName}</p>
                             <p className="text-4xl font-bold text-white mt-1">${price.toFixed(2)}</p>
                             <p className="text-sm text-gray-500">One-time payment</p>
                         </div>
-                        <p className="text-center text-sm text-gray-400 mb-4">Choose your payment method</p>
+                        <p className="text-center text-sm text-brand-text-muted mb-4">Choose your payment method</p>
                         <div className="space-y-3">
                             <PaymentButton icon={<PayPalIcon />} label="PayPal" onClick={handlePayment} />
                             <PaymentButton icon={<CreditCardIcon />} label="Credit / Debit Card" onClick={handlePayment} />
                             <PaymentButton icon={<ApplePayIcon />} label="Apple Pay" onClick={handlePayment} />
                         </div>
                          <div className="mt-6 text-center">
-                            <button onClick={onClose} className="text-gray-400 hover:text-white text-sm font-semibold">
+                            <button onClick={onClose} className="text-brand-text-muted hover:text-white text-sm font-semibold">
                                 Cancel Payment
                             </button>
                         </div>
@@ -113,7 +113,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, pro
     
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-            <div className="bg-green-900 border border-yellow-700/50 rounded-lg shadow-xl p-6 w-full max-w-sm transition-all duration-300 ease-in-out">
+            <div className="bg-brand-surface border border-brand-border/50 rounded-lg shadow-xl p-6 w-full max-w-sm transition-all duration-300 ease-in-out">
                 {renderContent()}
             </div>
         </div>

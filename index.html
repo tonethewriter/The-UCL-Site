@@ -24,8 +24,25 @@
   }
 }
 </script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'brand-bg': '#000000',
+            'brand-surface': '#0a1a0f', // Very dark green for cards
+            'brand-interactive': '#16a34a', // Mid green for buttons/hover
+            'brand-accent': '#4ade80', // Bright green for highlights
+            'brand-border': '#166534', // Darker green for borders
+            'brand-text': '#e2e8f0', // Off-white
+            'brand-text-muted': '#94a3b8', // Grayish
+          }
+        }
+      }
+    }
+  </script>
 </head>
-  <body class="bg-green-950 text-white">
+  <body class="bg-black text-brand-text">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
