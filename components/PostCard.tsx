@@ -25,7 +25,7 @@ export const PostCard: React.FC<{ post: Post; author: User | undefined; }> = ({ 
     const isAuthor = currentUser?.id === post.authorId;
     const isPlusMember = currentUser?.role.includes('_plus') || currentUser?.role === 'admin';
     const isPinned = currentUser?.pinnedPostId === post.id;
-    const isModerator = currentUser?.role === 'admin' || currentUser?.role === 'moderator';
+    const isModerator = currentUser?.role === 'admin' || !!currentUser?.isModerator;
     const isTimedOut = currentUser?.timeoutUntil && new Date(currentUser.timeoutUntil) > new Date();
 
 
@@ -113,6 +113,9 @@ export const PostCard: React.FC<{ post: Post; author: User | undefined; }> = ({ 
                                 <ShimmeringGamertag user={author} />
                             </Link>
                             {author && <RoleBadge role={author.role} />}
+                            {author?.isModerator && (
+                                <span className="px-2 py-0.5 rounded-full text-xs font-semibold leading-none bg-blue-600 text-white">Mod</span>
+                            )}
                         </div>
 
                         <p className="text-xs text-brand-text-muted">{timeAgo(post.timestamp)}</p>

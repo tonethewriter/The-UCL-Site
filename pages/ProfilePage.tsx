@@ -3,19 +3,9 @@ import { useAuth } from '../hooks/useAuth';
 import { Navigate, Link } from 'react-router-dom';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { Invite, Application, ProfileVisibility } from '../types';
-import { EnvelopeIcon, TrashIcon } from '../constants';
+import { EnvelopeIcon, TrashIcon, TwitterIcon, TwitchIcon, YouTubeIcon, ShimmeringGamertag } from '../constants';
 import { PostCard } from '../components/PostCard';
 import { fileToBase64 } from '../constants';
-
-
-const roleDisplayMap = {
-    player: 'Player',
-    player_plus: 'Player Plus ⭐',
-    team_owner: 'Team Owner',
-    co_owner: 'Co-Owner',
-    team_owner_plus: 'Team Owner Plus ⭐',
-    admin: 'Administrator'
-};
 
 const StatCard: React.FC<{ label: string; value: string | number; icon?: React.ReactNode }> = ({ label, value, icon }) => (
     <div className="bg-black/30 p-4 rounded-lg text-center">
@@ -99,6 +89,7 @@ export const ProfilePage: React.FC = () => {
     const { currentUser, teams, posts, quests, invites, applications, customEmojis, leaveTeam, toggleFreeAgentStatus, updateUserProfile, updateProfileBanner, addCustomEmoji, deleteCustomEmoji, updateProfileVisibility, updateProfilePicture } = useAuth();
     const profilePicInputRef = useRef<HTMLInputElement>(null);
     const bannerInputRef = useRef<HTMLInputElement>(null);
+    const editSectionRef = useRef<HTMLDivElement>(null);
     
     const [gamertag, setGamertag] = useState(currentUser?.gamertag || '');
     const [email, setEmail] = useState(currentUser?.email || '');
@@ -140,7 +131,8 @@ export const ProfilePage: React.FC = () => {
             }
             setUpdateMessage('Profile updated successfully!');
             setUpdateStatus('success');
-        } catch (err: any) {
+        } catch (err: any)
+ {
             setUpdateMessage(err.message);
             setUpdateStatus('error');
         } finally {
@@ -196,6 +188,8 @@ export const ProfilePage: React.FC = () => {
             try {
                 const base64 = await fileToBase64(file);
                 setBannerUrl(base64);
+                // Automatically save banner
+                await updateProfileBanner(base64);
             } catch (err) {
                 console.error("Failed to read banner file", err);
             }
@@ -203,6 +197,17 @@ export const ProfilePage: React.FC = () => {
     };
     
     const canLeaveTeam = currentUser.role === 'player' || currentUser.role === 'player_plus';
+
+    const roleDisplayMap = {
+        player: 'Player',
+        player_plus: 'Player Plus ⭐',
+        team_owner: 'Team Owner',
+        co_owner: 'Co-Owner',
+        team_owner_plus: 'Team Owner Plus ⭐',
+        admin: 'Administrator',
+    };
+
+    const scrollToEdit = () => editSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     // --- Plus Feature Components ---
     
@@ -397,149 +402,135 @@ export const ProfilePage: React.FC = () => {
 
     return (
         <>
-            <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
-                <h1 className="text-4xl font-bold text-brand-accent mb-8">Your Profile</h1>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-1">
-                        <div className="bg-brand-surface p-6 rounded-xl shadow-lg border border-brand-border/50 text-center">
-                            {currentUser.profilePicture ? (
-                                <img src={currentUser.profilePicture} alt={currentUser.gamertag} className="w-32 h-32 rounded-full object-cover ring-4 ring-brand-accent/50 bg-brand-border mx-auto" />
-                            ) : (
-                                <div className="w-32 h-32 rounded-full bg-brand-accent flex items-center justify-center font-bold text-black text-6xl ring-4 ring-brand-accent/50 mx-auto">
-                                    {currentUser.gamertag.charAt(0).toUpperCase()}
-                                </div>
-                            )}
-                             <input
-                                type="file"
-                                ref={profilePicInputRef}
-                                onChange={handleChangePicture}
-                                className="hidden"
-                                accept="image/png, image/jpeg, image/gif"
-                            />
-                            <button onClick={() => profilePicInputRef.current?.click()} className="mt-4 text-xs bg-brand-interactive/50 hover:bg-brand-interactive text-white font-semibold py-1 px-3 rounded-md transition-colors">
-                                Upload Picture
-                            </button>
-                             {isPlusMember && <p className="text-xs text-brand-accent/80 mt-2">Animated GIFs are supported!</p>}
-                            <div className="mt-6 text-left space-y-3">
-                                <div className="bg-black/30 px-3 py-2 rounded-md text-sm">
-                                    <strong className="block text-brand-text-muted text-xs">Role</strong>
-                                    <span className="text-white">{roleDisplayMap[currentUser.role]}</span>
-                                </div>
-                                {team && (
-                                    <div className="bg-black/30 px-3 py-2 rounded-md text-sm">
-                                        <strong className="block text-brand-text-muted text-xs">Team</strong>
-                                        <div className="flex justify-between items-center">
-                                            <Link to={`/teams/${team.id}`} className="text-white font-semibold hover:underline">{team.name}</Link>
-                                            {canLeaveTeam && (
-                                                <button onClick={() => setIsLeaveModalOpen(true)} className="text-xs text-red-400 hover:underline">Leave</button>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                                <div className="bg-black/30 px-3 py-2 rounded-md text-sm">
-                                    <strong className="block text-brand-text-muted text-xs">UCL Points</strong>
-                                    <span className="text-brand-accent font-bold">{currentUser.uclPoints.toLocaleString()}</span>
-                                </div>
-                            </div>
-                             <div className="mt-6">
-                                {currentUser.isFreeAgent ? (
-                                    <button onClick={handleToggleFreeAgent} className="w-full text-center bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-md transition-colors">
-                                        Remove Free Agent Status
-                                    </button>
-                                ) : (
-                                    <button onClick={handleFABtnClick} className="w-full text-center bg-brand-interactive hover:bg-green-500 text-black font-bold py-2 px-4 rounded-md transition-colors">
-                                        Become a Free Agent
-                                    </button>
-                                )}
-                             </div>
-                        </div>
-                    </div>
-
-                    <div className="lg:col-span-2 space-y-8">
-                        <div className="bg-brand-surface p-8 rounded-xl shadow-lg border border-brand-border/50">
-                            <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-2xl font-semibold text-white">Account Details</h2>
-                            </div>
-                            <form onSubmit={handleUpdate} className="space-y-6">
-                                {isPlusMember && (
-                                     <div className="border-b border-brand-border/50 pb-6">
-                                        <h3 className="text-lg font-semibold text-brand-accent">Profile Banner (Plus Feature)</h3>
-                                        <div>
-                                            <label className="text-sm font-bold text-brand-text-muted block mt-4 mb-2" htmlFor="bannerUrl">Banner Image</label>
-                                             <p className="text-xs text-brand-accent/80 mb-2">Animated GIFs are supported!</p>
-                                             <input
-                                                type="file"
-                                                ref={bannerInputRef}
-                                                onChange={handleBannerFileChange}
-                                                className="hidden"
-                                                accept="image/png, image/jpeg, image/gif"
-                                            />
-                                            <div className="flex items-center gap-4">
-                                                {bannerUrl && <img src={bannerUrl} alt="Banner preview" className="w-24 h-14 rounded object-cover bg-brand-border" />}
-                                                <button type="button" onClick={() => bannerInputRef.current?.click()} className="bg-brand-border hover:bg-brand-interactive/50 text-white font-bold py-2 px-4 rounded-md transition-colors">
-                                                    {bannerUrl ? 'Change Banner' : 'Upload Banner'}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                                <div>
-                                    <label className="text-sm font-bold text-brand-text-muted block mb-2" htmlFor="gamertag">Gamertag</label>
-                                    <input type="text" id="gamertag" value={gamertag} onChange={(e) => setGamertag(e.target.value)} className="w-full bg-black/30 text-white border border-brand-border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-brand-accent transition" />
-                                </div>
-                                <div>
-                                    <label className="text-sm font-bold text-brand-text-muted block mb-2" htmlFor="email">Email</label>
-                                    <input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-black/30 text-white border border-brand-border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-brand-accent transition" />
-                                </div>
-                                <div className="border-t border-brand-border/50 pt-6">
-                                    <h3 className="text-lg font-semibold text-white mb-4">Social Links</h3>
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label className="text-sm font-bold text-brand-text-muted block mb-2" htmlFor="twitter">Twitter URL</label>
-                                            <input type="url" id="twitter" value={twitter} onChange={(e) => setTwitter(e.target.value)} placeholder="https://twitter.com/yourhandle" className="w-full bg-black/30 text-white border border-brand-border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-brand-accent transition" />
-                                        </div>
-                                        <div>
-                                            <label className="text-sm font-bold text-brand-text-muted block mb-2" htmlFor="twitch">Twitch URL</label>
-                                            <input type="url" id="twitch" value={twitch} onChange={(e) => setTwitch(e.target.value)} placeholder="https://twitch.tv/yourchannel" className="w-full bg-black/30 text-white border border-brand-border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-brand-accent transition" />
-                                        </div>
-                                        <div>
-                                            <label className="text-sm font-bold text-brand-text-muted block mb-2" htmlFor="youtube">YouTube URL</label>
-                                            <input type="url" id="youtube" value={youtube} onChange={(e) => setYoutube(e.target.value)} placeholder="https://youtube.com/yourchannel" className="w-full bg-black/30 text-white border border-brand-border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-brand-accent transition" />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="pt-2">
-                                    <button type="submit" disabled={isUpdating} className="w-full bg-brand-interactive hover:bg-green-500 text-black font-bold py-3 px-4 rounded-lg transition-all hover:scale-105 disabled:bg-brand-border disabled:cursor-not-allowed">
-                                        {isUpdating ? 'Saving...' : 'Update Profile'}
-                                    </button>
-                                    {updateMessage && (
-                                        <p className={`text-center text-sm mt-4 p-2 rounded-md ${updateStatus === 'success' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                                            {updateMessage}
-                                        </p>
-                                    )}
-                                </div>
-                            </form>
-                        </div>
-                        
-                        {isPlusMember && <ProfileVisibilityManager />}
-                        {isPlusMember && <StatsDashboard />}
-                        {isPlusMember && <CustomEmojiManager />}
-
-                        {(myInvites.length > 0 || myApplications.length > 0) && (
-                            <div className="bg-brand-surface p-6 rounded-xl shadow-lg border border-brand-border/50">
-                                <h2 className="text-2xl font-semibold text-white mb-4 flex items-center gap-2">
-                                    <EnvelopeIcon />
-                                    My Invites & Applications
-                                </h2>
-                                <div className="space-y-3">
-                                    {myInvites.map(invite => <InviteCard key={invite.id} invite={invite} />)}
-                                    {myApplications.map(app => <ApplicationCard key={app.id} application={app} />)}
-                                </div>
+            <div className="max-w-5xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+                {/* --- NEW HEADER START --- */}
+                <div className="bg-brand-surface shadow-lg rounded-xl border border-brand-border/50 overflow-hidden">
+                    {/* Banner Image */}
+                    <div className="h-36 md:h-48 bg-brand-border relative group">
+                        {currentUser.profileBanner ? (
+                            <img src={currentUser.profileBanner} alt={`${currentUser.gamertag}'s banner`} className="w-full h-full object-cover" />
+                        ) : (
+                            <div className="w-full h-full bg-gradient-to-r from-brand-surface via-brand-border to-brand-surface"></div>
+                        )}
+                        {isPlusMember && (
+                            <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <input type="file" ref={bannerInputRef} onChange={handleBannerFileChange} className="hidden" accept="image/png, image/jpeg, image/gif"/>
+                                <button onClick={() => bannerInputRef.current?.click()} className="text-xs bg-black/50 hover:bg-black/80 text-white font-semibold py-1 px-3 rounded-md transition-colors">
+                                    {bannerUrl ? 'Change Banner' : 'Upload Banner'}
+                                </button>
                             </div>
                         )}
                     </div>
+
+                    {/* Profile Info Section */}
+                    <div className="p-4 sm:p-6">
+                        <div className="flex flex-col sm:flex-row sm:items-end sm:space-x-5">
+                            {/* Profile Picture */}
+                            <div className="-mt-20 sm:-mt-24 flex-shrink-0 relative group">
+                                {currentUser.profilePicture ? (
+                                    <img src={currentUser.profilePicture} alt={currentUser.gamertag} className="h-24 w-24 sm:h-32 sm:w-32 rounded-full object-cover ring-4 ring-brand-surface bg-brand-border" />
+                                ) : (
+                                     <div className="h-24 w-24 sm:h-32 sm:w-32 rounded-full bg-brand-accent flex items-center justify-center font-bold text-black text-6xl ring-4 ring-brand-surface">
+                                        {currentUser.gamertag.charAt(0).toUpperCase()}
+                                    </div>
+                                )}
+                                <button onClick={() => profilePicInputRef.current?.click()} className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center text-white font-bold opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                                    Edit
+                                </button>
+                                <input type="file" ref={profilePicInputRef} onChange={handleChangePicture} className="hidden" accept="image/png, image/jpeg, image/gif"/>
+                            </div>
+                            
+                            <div className="mt-4 sm:mt-0 w-full flex-grow flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4">
+                                <div className="text-center sm:text-left">
+                                    <h1 className="text-2xl sm:text-4xl font-bold text-white break-words">
+                                        <ShimmeringGamertag user={currentUser} />
+                                    </h1>
+                                    <p className="text-sm text-brand-text-muted mt-1 break-words">{currentUser.email}</p>
+                                </div>
+                                
+                                <div className="flex items-center gap-4">
+                                     <button onClick={handleFABtnClick} className={`font-bold py-2 px-4 rounded-lg transition-colors text-sm ${currentUser.isFreeAgent ? 'bg-yellow-600 hover:bg-yellow-700 text-white' : 'bg-brand-border hover:bg-brand-surface text-white'}`}>
+                                        {currentUser.isFreeAgent ? 'Remove FA Status' : 'Become Free Agent'}
+                                    </button>
+                                    <button onClick={scrollToEdit} className="bg-brand-interactive hover:bg-green-500 text-black font-bold py-2 px-4 rounded-lg transition-transform hover:scale-105 text-sm">
+                                        Edit Profile
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="mt-6 flex flex-wrap gap-2 items-center justify-center sm:justify-start">
+                            <div className="bg-black/30 px-3 py-1 rounded-full text-sm text-brand-text"><strong>Role:</strong> {roleDisplayMap[currentUser.role]}</div>
+                            {currentUser.isModerator && (
+                                <div className="bg-blue-600/20 text-blue-300 px-3 py-1 rounded-full text-sm font-semibold">Moderator</div>
+                            )}
+                            {team && (<div className="bg-black/30 px-3 py-1 rounded-full text-sm text-brand-text"><strong>Team:</strong> <Link to={`/teams/${team.id}`} className="font-semibold hover:underline">{team.name}</Link></div>)}
+                            <div className="bg-black/30 px-3 py-1 rounded-full text-sm text-brand-text"><strong>UCL Points:</strong> <span className="text-brand-accent">{currentUser.uclPoints.toLocaleString()}</span></div>
+                             {team && canLeaveTeam && (
+                                <button onClick={() => setIsLeaveModalOpen(true)} className="text-xs text-red-400 hover:underline bg-red-500/10 px-2 py-1 rounded-md">Leave Team</button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+                {/* --- NEW HEADER END --- */}
+
+                {/* --- PAGE CONTENT --- */}
+                <div className="mt-8 space-y-8">
+                    {(myInvites.length > 0 || myApplications.length > 0) && (
+                        <div className="bg-brand-surface p-6 rounded-xl shadow-lg border border-brand-border/50">
+                            <h2 className="text-2xl font-semibold text-white mb-4 flex items-center gap-2"><EnvelopeIcon /> My Invites & Applications</h2>
+                            <div className="space-y-3">
+                                {myInvites.map(invite => <InviteCard key={invite.id} invite={invite} />)}
+                                {myApplications.map(app => <ApplicationCard key={app.id} application={app} />)}
+                            </div>
+                        </div>
+                    )}
+
+                    <div ref={editSectionRef} className="bg-brand-surface p-8 rounded-xl shadow-lg border border-brand-border/50">
+                        <h2 className="text-2xl font-semibold text-white">Edit Account Details</h2>
+                        <form onSubmit={handleUpdate} className="space-y-6 mt-6">
+                            <div>
+                                <label className="text-sm font-bold text-brand-text-muted block mb-2" htmlFor="gamertag">Gamertag</label>
+                                <input type="text" id="gamertag" value={gamertag} onChange={(e) => setGamertag(e.target.value)} className="w-full bg-black/30 text-white border border-brand-border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-brand-accent transition" />
+                            </div>
+                            <div>
+                                <label className="text-sm font-bold text-brand-text-muted block mb-2" htmlFor="email">Email</label>
+                                <input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-black/30 text-white border border-brand-border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-brand-accent transition" />
+                            </div>
+                            <div className="border-t border-brand-border/50 pt-6">
+                                <h3 className="text-lg font-semibold text-white mb-4">Social Links</h3>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="text-sm font-bold text-brand-text-muted block mb-2" htmlFor="twitter">Twitter URL</label>
+                                        <input type="url" id="twitter" value={twitter} onChange={(e) => setTwitter(e.target.value)} placeholder="https://twitter.com/yourhandle" className="w-full bg-black/30 text-white border border-brand-border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-brand-accent transition" />
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-bold text-brand-text-muted block mb-2" htmlFor="twitch">Twitch URL</label>
+                                        <input type="url" id="twitch" value={twitch} onChange={(e) => setTwitch(e.target.value)} placeholder="https://twitch.tv/yourchannel" className="w-full bg-black/30 text-white border border-brand-border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-brand-accent transition" />
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-bold text-brand-text-muted block mb-2" htmlFor="youtube">YouTube URL</label>
+                                        <input type="url" id="youtube" value={youtube} onChange={(e) => setYoutube(e.target.value)} placeholder="https://youtube.com/yourchannel" className="w-full bg-black/30 text-white border border-brand-border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-brand-accent transition" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="pt-2">
+                                <button type="submit" disabled={isUpdating} className="w-full bg-brand-interactive hover:bg-green-500 text-black font-bold py-3 px-4 rounded-lg transition-all hover:scale-105 disabled:bg-brand-border disabled:cursor-not-allowed">
+                                    {isUpdating ? 'Saving...' : 'Update Profile'}
+                                </button>
+                                {updateMessage && (
+                                    <p className={`text-center text-sm mt-4 p-2 rounded-md ${updateStatus === 'success' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                                        {updateMessage}
+                                    </p>
+                                )}
+                            </div>
+                        </form>
+                    </div>
+                    
+                    {isPlusMember && <ProfileVisibilityManager />}
+                    {isPlusMember && <StatsDashboard />}
+                    {isPlusMember && <CustomEmojiManager />}
                 </div>
             </div>
             <ConfirmationModal 

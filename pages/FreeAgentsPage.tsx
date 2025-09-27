@@ -26,8 +26,11 @@ const FreeAgentCard: React.FC<{ user: User }> = ({ user }) => {
         <div className="bg-brand-surface p-5 rounded-lg shadow-lg border border-brand-border/50 flex flex-col items-center text-center transition-transform hover:-translate-y-1">
             <img src={user.profilePicture} alt={user.gamertag} className="w-24 h-24 rounded-full bg-brand-border object-cover ring-4 ring-brand-border/50" />
             <h3 className="text-xl font-bold text-white mt-4">{user.gamertag}</h3>
-            <div className="my-2">
+            <div className="my-2 flex items-center gap-2">
                 <RoleBadge role={user.role} />
+                {user.isModerator && (
+                    <span className="px-2 py-0.5 rounded-full text-xs font-semibold leading-none bg-blue-600 text-white">Mod</span>
+                )}
             </div>
             <div className="flex items-center gap-1 text-brand-accent font-semibold bg-brand-accent/10 px-2.5 py-1 rounded-full text-sm">
                 <UCLPointIcon />

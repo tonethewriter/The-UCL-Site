@@ -108,7 +108,12 @@ export const Navbar: React.FC = () => {
                                                 <div className="py-1">
                                                     <div className="px-4 py-3 border-b border-brand-border/50">
                                                         <p className="text-sm text-white font-semibold truncate" aria-disabled="true">{currentUser.gamertag}</p>
-                                                        <div className="mt-1"><RoleBadge role={currentUser.role} /></div>
+                                                        <div className="mt-1 flex items-center gap-2">
+                                                            <RoleBadge role={currentUser.role} />
+                                                            {currentUser.isModerator && (
+                                                                <span className="px-2 py-0.5 rounded-full text-xs font-semibold leading-none bg-blue-600 text-white">Mod</span>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                     <NavLink to="/profile" className="flex items-center gap-3 w-full text-left px-4 py-2 text-sm text-brand-text-muted hover:bg-brand-border hover:text-white" onClick={() => setIsProfileOpen(false)}>
                                                         <UserIcon /> Profile
@@ -156,7 +161,12 @@ export const Navbar: React.FC = () => {
                                     <img src={currentUser.profilePicture} alt="Profile" className="w-10 h-10 rounded-full object-cover bg-brand-border" />
                                     <div>
                                         <ShimmeringGamertag user={currentUser} baseClassName="text-base font-medium text-white" />
-                                        <RoleBadge role={currentUser.role} />
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <RoleBadge role={currentUser.role} />
+                                            {currentUser.isModerator && (
+                                                <span className="px-2 py-0.5 rounded-full text-xs font-semibold leading-none bg-blue-600 text-white">Mod</span>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                                 <NavLink to="/notifications" onClick={() => setIsMobileMenuOpen(false)} className="relative text-brand-text-muted hover:text-white p-2 rounded-full hover:bg-brand-surface transition-colors">

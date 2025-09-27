@@ -2,7 +2,6 @@
 export type UserRole =
   | 'admin'
   | 'co_owner'
-  | 'moderator'
   | 'player'
   | 'player_plus'
   | 'team_owner'
@@ -40,6 +39,7 @@ export interface User {
   email: string;
   pin: string; 
   role: UserRole;
+  isModerator?: boolean;
   notificationSettings: NotificationSettings;
   createdAt: string;
   teamId?: string;

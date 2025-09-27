@@ -36,7 +36,7 @@ const initialUsers: User[] = [
   // Old users
   { id: '1', gamertag: 'Admin', email: 'admin@ucl.com', pin: '1234', role: 'admin', uclPoints: 1500, profilePicture: 'https://i.pravatar.cc/150?u=Admin', profileBanner: 'https://placehold.co/1200x400/166534/4ade80?text=Admin+HQ', notificationSettings: defaultNotificationSettings, createdAt: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 24 * 30).toISOString(), profileVisibility: defaultVisibilitySettings },
   { id: '4', gamertag: 'Viper', email: 'viper@ucl.com', pin: '1234', role: 'team_owner_plus', teamId: 't2', uclPoints: 1100, profilePicture: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZnejRzZTNkcnNmMjB4N2ZtN2Y0cHJqZm5tYW51NWYzcGZseG8zayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/f4V2mqb6YE50I/giphy.gif', profileBanner: 'https://placehold.co/1200x400/8b5cf6/ffffff?text=Viper', pinnedPostId: 'p3', notificationSettings: defaultNotificationSettings, twitter: 'https://twitter.com/example', createdAt: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 24 * 10).toISOString(), profileVisibility: defaultVisibilitySettings },
-  { id: '6', gamertag: 'Moderator', email: 'coowner@ucl.com', pin: '1234', role: 'moderator', teamId: 't2', uclPoints: 900, profilePicture: 'https://i.pravatar.cc/150?u=6', notificationSettings: defaultNotificationSettings, createdAt: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 24 * 5).toISOString(), profileVisibility: defaultVisibilitySettings },
+  { id: '6', gamertag: 'Moderator', email: 'coowner@ucl.com', pin: '1234', role: 'player_plus', isModerator: true, teamId: 't2', uclPoints: 900, profilePicture: 'https://i.pravatar.cc/150?u=6', notificationSettings: defaultNotificationSettings, createdAt: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 24 * 5).toISOString(), profileVisibility: defaultVisibilitySettings },
   { id: '7', gamertag: 'Shadow', email: 'shadow@ucl.com', pin: '1234', role: 'team_owner', teamId: 't1', uclPoints: 1000, profilePicture: 'https://i.pravatar.cc/150?u=7', notificationSettings: defaultNotificationSettings, createdAt: new Date(MOCK_DATE.getTime() - 1000 * 60 * 60 * 24 * 15).toISOString(), profileVisibility: defaultVisibilitySettings },
   
   // Recent users (relative to MOCK_DATE)
@@ -205,6 +205,7 @@ export interface AuthContextType {
   timeoutUser: (userId: string, durationHours: number) => Promise<void>;
   deleteComment: (postId: string, commentId: string) => Promise<void>;
   toggleWallPosting: () => void;
+  toggleModeratorStatus: (userId: string) => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -822,7 +823,7 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
     
     // Moderator Actions
     const timeoutUser = async (userId: string, durationHours: number) => {
-        if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'moderator')) throw new Error("Insufficient permissions.");
+        if (!currentUser || (currentUser.role !== 'admin' && !currentUser.isModerator)) throw new Error("Insufficient permissions.");
         const userToTimeout = users.find(u => u.id === userId);
         if (!userToTimeout) throw new Error("User not found.");
 
@@ -840,7 +841,7 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
     };
 
     const deleteComment = async (postId: string, commentId: string) => {
-        if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'moderator')) throw new Error("Insufficient permissions.");
+        if (!currentUser || (currentUser.role !== 'admin' && !currentUser.isModerator)) throw new Error("Insufficient permissions.");
         const post = posts.find(p => p.id === postId);
         const comment = post?.comments.find(c => c.id === commentId);
         if (!post || !comment) throw new Error("Comment not found.");
@@ -865,8 +866,14 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
       setIsWallPostingDisabled(prev => !prev);
     };
 
+    const toggleModeratorStatus = (userId: string) => {
+        setUsers(prev => prev.map(u => 
+            u.id === userId ? { ...u, isModerator: !u.isModerator } : u
+        ));
+    };
 
-  const value = { currentUser, users, posts, quests, messages, notifications, teams, invites, applications, activityLog, customEmojis, reactionPointReward, isWallPostingDisabled, login, logout, signUp, addPost, toggleReaction, addComment, claimQuestReward, updateQuestProgress, sendMessage, leaveTeam, toggleFreeAgentStatus, markNotificationAsRead, markAllNotificationsAsRead, updateNotificationSettings, addQuest, updateQuest, deleteQuest, deleteUser, updateUserRole, deletePost, deleteAllPublicPosts, submitFeedback, adjustUserPoints, updateUserProfile, updateProfilePicture, sendInvite, respondToInvite, applyToTeam, respondToApplication, editTeamDetails, transferTeamOwnership, disbandTeam, pinPost, updateProfileBanner, updateTeamBanner, addCustomEmoji, deleteCustomEmoji, updateProfileVisibility, timeoutUser, deleteComment, toggleWallPosting };
+
+  const value = { currentUser, users, posts, quests, messages, notifications, teams, invites, applications, activityLog, customEmojis, reactionPointReward, isWallPostingDisabled, login, logout, signUp, addPost, toggleReaction, addComment, claimQuestReward, updateQuestProgress, sendMessage, leaveTeam, toggleFreeAgentStatus, markNotificationAsRead, markAllNotificationsAsRead, updateNotificationSettings, addQuest, updateQuest, deleteQuest, deleteUser, updateUserRole, deletePost, deleteAllPublicPosts, submitFeedback, adjustUserPoints, updateUserProfile, updateProfilePicture, sendInvite, respondToInvite, applyToTeam, respondToApplication, editTeamDetails, transferTeamOwnership, disbandTeam, pinPost, updateProfileBanner, updateTeamBanner, addCustomEmoji, deleteCustomEmoji, updateProfileVisibility, timeoutUser, deleteComment, toggleWallPosting, toggleModeratorStatus };
 
   // FIX: Corrected a typo from `Auth.Provider` to `AuthContext.Provider` to fix a 'Cannot find name' error.
   return (

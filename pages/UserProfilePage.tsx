@@ -28,7 +28,7 @@ export const UserProfilePage: React.FC = () => {
     const user = users.find(u => u.id === userId);
     const team = user?.teamId ? teams.find(t => t.id === user.teamId) : null;
     
-    const isModeratorView = currentUser?.role === 'admin' || currentUser?.role === 'moderator';
+    const isModeratorView = currentUser?.role === 'admin' || !!currentUser?.isModerator;
     const canViewAll = isModeratorView || currentUser?.id === user?.id;
 
     const showPinnedPost = canViewAll || (user?.profileVisibility?.showPinnedPost ?? true);
@@ -39,7 +39,6 @@ export const UserProfilePage: React.FC = () => {
 
     const handleMessageClick = () => {
         if (!currentUser || !user) return;
-        // Create a predictable, unique channel ID for the two users
         const channelId = ['dm', currentUser.id, user.id].sort().join('_');
         navigate('/messages', { state: { activeChannelId: channelId } });
     };
@@ -68,7 +67,6 @@ export const UserProfilePage: React.FC = () => {
         team_owner: 'Team Owner',
         team_owner_plus: 'Team Owner Plus ⭐',
         co_owner: 'Co-Owner',
-        moderator: 'Moderator',
         admin: 'Administrator'
     };
 
@@ -80,123 +78,110 @@ export const UserProfilePage: React.FC = () => {
 
     return (
         <>
-            <div className="max-w-4xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
-                <div className="bg-brand-surface rounded-xl shadow-2xl border border-brand-border/50 overflow-hidden">
-                    <div className="h-48 bg-brand-border relative">
-                        {user.profileBanner ? (
-                            <img src={user.profileBanner} alt={`${user.gamertag}'s banner`} className="w-full h-full object-cover" />
-                        ) : (
-                            <div className="w-full h-full bg-gradient-to-r from-brand-surface to-brand-border"></div>
-                        )}
-                        <div className="absolute -bottom-16 left-8">
-                            {user.profilePicture ? (
-                                <img src={user.profilePicture} alt={user.gamertag} className="w-32 h-32 rounded-full object-cover ring-4 ring-brand-surface bg-brand-border" />
+            <div className="bg-black">
+                {/* --- NEW HEADER START --- */}
+                <div className="max-w-5xl mx-auto">
+                    <div className="bg-brand-surface shadow-lg rounded-b-xl border-x border-b border-brand-border/50 overflow-hidden">
+                        {/* Banner Image */}
+                        <div className="h-36 md:h-48 bg-brand-border relative">
+                            {user.profileBanner ? (
+                                <img src={user.profileBanner} alt={`${user.gamertag}'s banner`} className="w-full h-full object-cover" />
                             ) : (
-                                <div className="w-32 h-32 rounded-full bg-brand-accent flex items-center justify-center font-bold text-black text-6xl ring-4 ring-brand-surface">
-                                    {user.gamertag.charAt(0).toUpperCase()}
-                                </div>
+                                <div className="w-full h-full bg-gradient-to-r from-brand-surface via-brand-border to-brand-surface"></div>
                             )}
                         </div>
-                    </div>
 
-                    <div className="pt-20 px-8 pb-8">
-                         <div className="flex flex-col md:flex-row items-center md:items-start justify-between">
-                             <div>
-                                <h1 className="text-4xl font-bold text-white break-words">
-                                    <ShimmeringGamertag user={user} />
-                                </h1>
-                                {canViewAll ? (
-                                    <p className="text-brand-text-muted mt-1 break-words">{user.email}</p>
-                                ) : (
-                                    <p className="text-brand-text-muted mt-1 break-words italic">[Email Hidden for Privacy]</p>
+                        {/* Profile Info Section */}
+                        <div className="p-4 sm:p-6">
+                            <div className="flex flex-col sm:flex-row sm:items-end sm:space-x-5">
+                                {/* Profile Picture */}
+                                <div className="-mt-20 sm:-mt-24 flex-shrink-0">
+                                    {user.profilePicture ? (
+                                        <img src={user.profilePicture} alt={user.gamertag} className="h-24 w-24 sm:h-32 sm:w-32 rounded-full object-cover ring-4 ring-brand-surface bg-brand-border" />
+                                    ) : (
+                                        <div className="h-24 w-24 sm:h-32 sm:w-32 rounded-full bg-brand-accent flex items-center justify-center font-bold text-black text-6xl ring-4 ring-brand-surface">
+                                            {user.gamertag.charAt(0).toUpperCase()}
+                                        </div>
+                                    )}
+                                </div>
+                                
+                                <div className="mt-4 sm:mt-0 w-full flex-grow flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4">
+                                    <div className="text-center sm:text-left">
+                                        <h1 className="text-2xl sm:text-4xl font-bold text-white break-words">
+                                            <ShimmeringGamertag user={user} />
+                                        </h1>
+                                        {canViewAll ? (
+                                            <p className="text-sm text-brand-text-muted mt-1 break-words">{user.email}</p>
+                                        ) : (
+                                            <p className="text-sm text-brand-text-muted mt-1 break-words italic">[Email Hidden for Privacy]</p>
+                                        )}
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-4">
+                                        {showSocials && (
+                                            <div className="flex items-center justify-center space-x-4">
+                                                {user.twitter && ( <a href={user.twitter} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors" title="Twitter"><TwitterIcon className="w-6 h-6" /></a> )}
+                                                {user.twitch && ( <a href={user.twitch} target="_blank" rel="noopener noreferrer" className="text-purple-500 hover:text-purple-400 transition-colors" title="Twitch"><TwitchIcon className="w-6 h-6" /></a> )}
+                                                {user.youtube && ( <a href={user.youtube} target="_blank" rel="noopener noreferrer" className="text-red-600 hover:text-red-500 transition-colors" title="YouTube"><YouTubeIcon className="w-6 h-6" /></a> )}
+                                            </div>
+                                        )}
+                                        {canMessageUser && (
+                                            <button onClick={handleMessageClick} className="flex items-center justify-center gap-2 bg-brand-interactive hover:bg-green-500 text-black font-bold py-2 px-4 rounded-lg transition-transform hover:scale-105 text-sm">
+                                                <MessageIcon className="w-5 h-5" />
+                                                <span>Message</span>
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="mt-6 flex flex-wrap gap-2 items-center justify-center sm:justify-start">
+                                <div className="bg-black/30 px-3 py-1 rounded-full text-sm text-brand-text"><strong>Role:</strong> {roleDisplayMap[user.role]}</div>
+                                {user.isModerator && (
+                                    <div className="bg-blue-600/20 text-blue-300 px-3 py-1 rounded-full text-sm font-semibold">Moderator</div>
                                 )}
+                                {team && showTeam && (<div className="bg-black/30 px-3 py-1 rounded-full text-sm text-brand-text"><strong>Team:</strong> <Link to={`/teams/${team.id}`} className="font-semibold hover:underline">{team.name}</Link></div>)}
+                                {user.isFreeAgent && (<div className="bg-yellow-600/20 text-yellow-300 px-3 py-1 rounded-full text-sm font-semibold">Free Agent</div>)}
+                                {showPoints && (<div className="bg-black/30 px-3 py-1 rounded-full text-sm text-brand-text"><strong>UCL Points:</strong> <span className="text-brand-accent">{user.uclPoints.toLocaleString()}</span></div>)}
                             </div>
-                            {showSocials && (
-                                <div className="mt-4 md:mt-0 flex items-center justify-center md:justify-start space-x-4">
-                                    {user.twitter && (
-                                        <a href={user.twitter} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors" title="Twitter">
-                                            <TwitterIcon className="w-6 h-6" />
-                                        </a>
-                                    )}
-                                    {user.twitch && (
-                                        <a href={user.twitch} target="_blank" rel="noopener noreferrer" className="text-purple-500 hover:text-purple-400 transition-colors" title="Twitch">
-                                            <TwitchIcon className="w-6 h-6" />
-                                        </a>
-                                    )}
-                                    {user.youtube && (
-                                        <a href={user.youtube} target="_blank" rel="noopener noreferrer" className="text-red-600 hover:text-red-500 transition-colors" title="YouTube">
-                                            <YouTubeIcon className="w-6 h-6" />
-                                        </a>
-                                    )}
-                                </div>
-                            )}
-                         </div>
-                         <div className="mt-4 flex flex-wrap gap-2">
-                            <div className="flex items-center justify-center md:justify-start gap-2 bg-black/30 px-3 py-1 rounded-full text-sm text-brand-text">
-                                <strong>Role:</strong> {roleDisplayMap[user.role]}
-                            </div>
-                            {team && showTeam && (
-                                <div className="flex items-center justify-center md:justify-start gap-2 bg-black/30 px-3 py-1 rounded-full text-sm text-brand-text">
-                                    <strong>Team:</strong> <Link to={`/teams/${team.id}`} className="font-semibold hover:underline">{team.name}</Link>
-                                </div>
-                            )}
-                             {user.isFreeAgent && (
-                                <div className="flex items-center justify-center md:justify-start gap-2 bg-yellow-600/20 text-yellow-300 px-3 py-1 rounded-full text-sm font-semibold">
-                                    Free Agent
-                                </div>
-                            )}
-                            {showPoints && (
-                                <div className="flex items-center justify-center md:justify-start gap-2 bg-black/30 px-3 py-1 rounded-full text-sm text-brand-text">
-                                    <strong>UCL Points:</strong> <span className="text-brand-accent">{user.uclPoints.toLocaleString()}</span>
-                                </div>
+
+                            {isTimedOut && (
+                                 <div className="mt-4 p-3 bg-red-900/50 border border-red-500/50 rounded-lg text-red-300 text-sm">This user is currently timed out until {new Date(user.timeoutUntil!).toLocaleString()}.</div>
                             )}
                         </div>
-                        {isTimedOut && (
-                             <div className="mt-4 p-3 bg-red-900/50 border border-red-500/50 rounded-lg text-red-300 text-sm">
-                                This user is currently timed out until {new Date(user.timeoutUntil!).toLocaleString()}.
-                            </div>
-                        )}
-                         {canMessageUser && (
-                            <div className="mt-6">
-                                <button
-                                    onClick={handleMessageClick}
-                                    className="flex items-center justify-center gap-2 w-full md:w-auto bg-brand-interactive hover:bg-green-500 text-black font-bold py-2 px-6 rounded-lg transition-transform hover:scale-105"
-                                >
-                                    <MessageIcon className="w-5 h-5" />
-                                    <span>Message {user.gamertag}</span>
-                                </button>
-                            </div>
-                        )}
                     </div>
                 </div>
+                {/* --- NEW HEADER END --- */}
+                
+                <div className="max-w-5xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+                    {isModeratorView && currentUser?.id !== user.id && (
+                         <div className="mb-8 bg-brand-surface p-6 rounded-xl shadow-lg border border-brand-border/50">
+                            <h2 className="text-xl font-semibold text-brand-accent mb-4 flex items-center gap-2">
+                                <ShieldExclamationIcon />
+                                Moderation Actions
+                            </h2>
+                            <div className="flex items-center gap-4">
+                                <button
+                                    onClick={() => setIsTimeoutModalOpen(true)}
+                                    className="bg-yellow-600 hover:bg-yellow-500 text-black font-bold py-2 px-4 rounded-md transition-colors text-sm"
+                                >
+                                    Timeout User
+                                </button>
+                                <p className="text-sm text-brand-text-muted">Temporarily restrict posting and commenting.</p>
+                            </div>
+                         </div>
+                    )}
 
-                {isModeratorView && currentUser?.id !== user.id && (
-                     <div className="mt-8 bg-brand-surface p-6 rounded-xl shadow-lg border border-brand-border/50">
-                        <h2 className="text-xl font-semibold text-brand-accent mb-4 flex items-center gap-2">
-                            <ShieldExclamationIcon />
-                            Moderation Actions
-                        </h2>
-                        <div className="flex items-center gap-4">
-                            <button
-                                onClick={() => setIsTimeoutModalOpen(true)}
-                                className="bg-yellow-600 hover:bg-yellow-500 text-black font-bold py-2 px-4 rounded-md transition-colors text-sm"
-                            >
-                                Timeout User
-                            </button>
-                            <p className="text-sm text-brand-text-muted">Temporarily restrict posting and commenting.</p>
+                    {pinnedPost && (
+                        <div className="mt-8">
+                            <h2 className="text-2xl font-semibold text-brand-accent mb-4 flex items-center gap-2">
+                                <PinIcon className="w-6 h-6" />
+                                Pinned Post
+                            </h2>
+                            <PostCard post={pinnedPost} author={pinnedPostAuthor} />
                         </div>
-                     </div>
-                )}
-
-                {pinnedPost && (
-                    <div className="mt-8">
-                        <h2 className="text-2xl font-semibold text-brand-accent mb-4 flex items-center gap-2">
-                            <PinIcon className="w-6 h-6" />
-                            Pinned Post
-                        </h2>
-                        <PostCard post={pinnedPost} author={pinnedPostAuthor} />
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
             <TimeoutUserModal 
                 isOpen={isTimeoutModalOpen}

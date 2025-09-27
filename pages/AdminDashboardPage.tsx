@@ -56,7 +56,7 @@ const timeAgo = (dateString: string): string => {
 };
 
 export const AdminDashboardPage: React.FC = () => {
-    const { currentUser, users, posts, quests, teams, activityLog, addQuest, updateQuest, deleteQuest, updateUserRole, deleteUser, deletePost, adjustUserPoints, editTeamDetails, transferTeamOwnership, disbandTeam } = useAuth();
+    const { currentUser, users, posts, quests, teams, activityLog, addQuest, updateQuest, deleteQuest, updateUserRole, deleteUser, deletePost, adjustUserPoints, editTeamDetails, transferTeamOwnership, disbandTeam, toggleModeratorStatus } = useAuth();
     
     // Quest state
     const [isQuestModalOpen, setIsQuestModalOpen] = useState(false);
@@ -103,7 +103,20 @@ export const AdminDashboardPage: React.FC = () => {
 
     // User handlers
     const handleOpenEditRoleModal = (user: User) => { setEditingUser(user); setIsRoleModalOpen(true); };
-    const handleSaveRole = (userId: string, newRole: UserRole) => { updateUserRole(userId, newRole); setIsRoleModalOpen(false); };
+    const handleSaveRole = (userId: string, newRole: UserRole, isModerator: boolean) => {
+        const user = users.find(u => u.id === userId);
+        if (!user) return;
+        
+        if (user.role !== newRole) {
+            updateUserRole(userId, newRole);
+        }
+        
+        if (!!user.isModerator !== isModerator) {
+            toggleModeratorStatus(userId);
+        }
+
+        setIsRoleModalOpen(false);
+    };
     const handleOpenPointsModal = (user: User) => { setEditingUser(user); setIsPointsModalOpen(true); };
     const handleSavePoints = (userId: string, amount: number) => { adjustUserPoints(userId, amount); setIsPointsModalOpen(false); };
     const openDeleteUserConfirm = (userId: string) => { setDeletingUserId(userId); setIsDeleteUserConfirmOpen(true); };
